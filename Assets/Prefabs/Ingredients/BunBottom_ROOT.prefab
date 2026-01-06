@@ -11,9 +11,10 @@ GameObject:
   - component: {fileID: 7842529404138711428}
   - component: {fileID: 7842529404138711429}
   - component: {fileID: 7842529404138711430}
-  - component: {fileID: 7842529404138711431}
   - component: {fileID: 7842529404138711424}
   - component: {fileID: 7842529404138711435}
+  - component: {fileID: 8609606835331655040}
+  - component: {fileID: -4307405721278712341}
   m_Layer: 0
   m_Name: BunBottom_ROOT
   m_TagString: Untagged
@@ -62,7 +63,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 6b6368b18c0717246b43e891951393cf, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -84,20 +85,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!136 &7842529404138711431
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7842529404138711425}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  m_Radius: 0.5
-  m_Height: 2
-  m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!54 &7842529404138711424
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -127,5 +114,34 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
-  layerHeight: 0.03
+  layerHeight: 0.015
   snapped: 0
+  spawner: {fileID: 0}
+--- !u!65 &8609606835331655040
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7842529404138711425}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 1, y: 1.7298279, z: 1}
+  m_Center: {x: 0, y: -0.029285355, z: 0}
+--- !u!114 &-4307405721278712341
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7842529404138711425}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0894b54379a96804eb09151ea38c5cb1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  floorTag: Floor
+  dirtOverlayMaterial: {fileID: 2100000, guid: d85b0c991d7ab78488a309346114f2f4, type: 2}
+  targetRenderer: {fileID: 0}

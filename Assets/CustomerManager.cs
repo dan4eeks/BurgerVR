@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -20,10 +21,32 @@ public class CustomerManager : MonoBehaviour
     [Range(0f, 1f)]
     [SerializeField] private float alwaysAngryChance = 0.1f;
 
+    [Header("Panic settings (smoke alarm)")]
+    [SerializeField] private float panicCooldown = 6f;      // чтобы не срабатывать на каждый beep
+    [SerializeField] private float panicRunSpeedMult = 2.2f;
+
     private readonly List<Customer> queue = new List<Customer>();
     private float spawnTimer;
 
+    private float panicTimer = 0f;
+
     public Customer ActiveCustomer { get; private set; }
+
+    // ?? Клиент реально дошёл до кассы и стоит там
+    public Action<Customer> OnCustomerArrivedAtCashier;
+
+    // ?? Активный клиент ушёл / заказ завершён / кто-то ушёл из очереди — UI показать "ожидание"
+    public Action OnActiveCustomerLeft;
+
+    private void OnEnable()
+    {
+        PattyCookable.OnSmokeAlarmBeepGlobal += OnSmokeAlarmBeep;
+    }
+
+    private void OnDisable()
+    {
+        PattyCookable.OnSmokeAlarmBeepGlobal -= OnSmokeAlarmBeep;
+    }
 
     private void Start()
     {
@@ -32,6 +55,9 @@ public class CustomerManager : MonoBehaviour
 
     private void Update()
     {
+        if (panicTimer > 0f)
+            panicTimer -= Time.deltaTime;
+
         spawnTimer -= Time.deltaTime;
         if (spawnTimer <= 0f)
         {
@@ -78,7 +104,7 @@ public class CustomerManager : MonoBehaviour
         queue.Add(c);
 
         int myIndex = queue.Count - 1;
-        bool alwaysAngry = (Random.value < alwaysAngryChance);
+        bool alwaysAngry = (UnityEngine.Random.value < alwaysAngryChance);
 
         c.Init(this, queuePoints[myIndex], exitPoint, alwaysAngry);
 
@@ -86,17 +112,27 @@ public class CustomerManager : MonoBehaviour
     }
 
     private void ReassignQueueTargets()
-{
-    for (int i = 0; i < queue.Count; i++)
     {
-        if (i >= queuePoints.Length) continue;
-        if (queue[i] == null) continue;
+        for (int i = 0; i < queue.Count; i++)
+        {
+            if (i >= queuePoints.Length) continue;
+            if (queue[i] == null) continue;
 
-        queue[i].SetTarget(queuePoints[i]);
-        queue[i].OnQueueIndexChanged(i); // ? вот оно
+            queue[i].SetTarget(queuePoints[i]);
+            queue[i].OnQueueIndexChanged(i);
+            // ?? НЕ вызываем событие здесь — оно придёт из Customer, когда он реально дошёл
+        }
     }
-}
 
+    /// <summary>Customer вызывает это один раз, когда реально дошёл до Q0 и стоит там.</summary>
+    public void NotifyCustomerArrivedAtCashier(Customer c)
+    {
+        if (c == null) return;
+        if (queue.Count == 0) return;
+
+        if (queue[0] == c && ActiveCustomer == null)
+            OnCustomerArrivedAtCashier?.Invoke(c);
+    }
 
     public bool CanAcceptOrder()
     {
@@ -108,9 +144,7 @@ public class CustomerManager : MonoBehaviour
         if (!CanAcceptOrder()) return null;
 
         ActiveCustomer = queue[0];
-        if (ActiveCustomer != null)
-            ActiveCustomer.OnOrderAccepted();
-
+        ActiveCustomer?.OnOrderAccepted();
         return ActiveCustomer;
     }
 
@@ -123,22 +157,61 @@ public class CustomerManager : MonoBehaviour
 
         queue.Remove(done);
 
-        if (done != null)
-            done.Leave();
+        done?.Leave();
 
         ReassignQueueTargets();
+
+        // UI -> ожидание до следующего "дошёл к кассе"
+        OnActiveCustomerLeft?.Invoke();
     }
 
     public void OnCustomerLeftAngry(Customer c)
     {
-        if (ActiveCustomer == c) ActiveCustomer = null;
+        if (ActiveCustomer == c)
+            ActiveCustomer = null;
 
         queue.Remove(c);
         ReassignQueueTargets();
+
+        // ВАЖНО: UI всегда в "ожидание", а кнопку покажем только когда новый реально дошёл
+        OnActiveCustomerLeft?.Invoke();
     }
 
     public void OnCustomerExited(Customer c)
     {
-        // optional
+        // optional: оставить для совместимости/статистики
+    }
+
+    // =========================
+    // PANIC FROM SMOKE ALARM
+    // =========================
+    private void OnSmokeAlarmBeep()
+    {
+        if (panicTimer > 0f) return;
+        panicTimer = panicCooldown;
+
+        // Бежать некому, если 0-1 человек
+        if (queue.Count <= 1) return;
+
+        // Все, кто НЕ у кассы (индексы 1..), бегут
+        for (int i = queue.Count - 1; i >= 1; i--)
+        {
+            Customer c = queue[i];
+            if (c == null)
+            {
+                queue.RemoveAt(i);
+                continue;
+            }
+
+            c.PanicRunToExit(panicRunSpeedMult);
+            queue.RemoveAt(i);
+        }
+
+        ReassignQueueTargets();
+
+        // Если вдруг никого не осталось (кроме кассы) — UI не трогаем.
+        // Если вообще никого не осталось — покажем ожидание:
+        if (queue.Count == 0)
+            OnActiveCustomerLeft?.Invoke();
     }
 }

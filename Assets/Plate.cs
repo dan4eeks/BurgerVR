@@ -4,7 +4,15 @@ using UnityEngine;
 public class Plate : MonoBehaviour
 {
     public Transform buildSpot;
+
+    // Порядок ингредиентов
     public List<IngredientType> Stack = new List<IngredientType>();
+
+    // Прожарка котлет (по порядку добавления котлет)
+    public List<PattyCookState> PattyStates = new List<PattyCookState>();
+
+    // Грязь каждого добавленного ингредиента (по порядку Stack)
+    public List<bool> DirtyFlags = new List<bool>();
 
     public float defaultLayerHeight = 0.03f;
 
@@ -62,7 +70,22 @@ public class Plate : MonoBehaviour
         Collider col = ing.GetComponent<Collider>();
         if (col != null) col.isTrigger = false;
 
+        // 1) Тип ингредиента
         Stack.Add(ing.type);
+
+        // 2) Грязь ингредиента (если нет IngredientCondition — считаем чистым)
+        bool isDirty = false;
+        IngredientCondition cond = ing.GetComponentInParent<IngredientCondition>();
+        if (cond != null) isDirty = cond.IsDirty;
+        DirtyFlags.Add(isDirty);
+
+        // 3) Если котлета — сохраняем степень прожарки в момент добавления
+        if (ing.type == IngredientType.Patty)
+        {
+            PattyCookable cookable = ing.GetComponentInParent<PattyCookable>();
+            PattyCookState state = cookable != null ? cookable.State : PattyCookState.Raw;
+            PattyStates.Add(state);
+        }
 
         float h = ing.layerHeight > 0f ? ing.layerHeight : defaultLayerHeight;
         currentHeight += h;
@@ -76,6 +99,8 @@ public class Plate : MonoBehaviour
             Destroy(buildSpot.GetChild(i).gameObject);
 
         Stack.Clear();
+        PattyStates.Clear();
+        DirtyFlags.Clear();
         currentHeight = 0f;
     }
 }
