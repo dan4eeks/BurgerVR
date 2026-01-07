@@ -28,7 +28,7 @@ public class Ingredient : MonoBehaviour
         // Сообщаем спавнеру: "меня взяли"
         if (spawner != null)
         {
-            spawner.OnIngredientTaken();
+            spawner.NotifyTakenOrTrashed(this);
             spawner = null; // защита от повторного вызова
         }
     }

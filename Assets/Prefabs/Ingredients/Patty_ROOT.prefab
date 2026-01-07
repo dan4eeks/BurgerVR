@@ -155,8 +155,8 @@ MonoBehaviour:
   sizzleSource: {fileID: 8237320456953938869}
   sizzleLoopClip: {fileID: 8300000, guid: f9c184252a8a05f4694ee4531674af8f, type: 3}
   sizzleVolume: 0.6
-  oneShotSource: {fileID: 0}
-  cookedSfx: {fileID: 0}
+  oneShotSource: {fileID: 8237320456953938869}
+  cookedSfx: {fileID: 8300000, guid: b99bc0c6feffe0b458d86596aae3ac05, type: 3}
   burntSfx: {fileID: 0}
   oneShotVolume: 0.9
   smokeParticles: {fileID: 4770635456504111369}
@@ -189,9 +189,9 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 0}
+  m_audioClip: {fileID: 8300000, guid: b99bc0c6feffe0b458d86596aae3ac05, type: 3}
   m_PlayOnAwake: 0
-  m_Volume: 0.6
+  m_Volume: 0.79
   m_Pitch: 1
   Loop: 0
   Mute: 0

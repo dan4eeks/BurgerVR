@@ -5,6 +5,7 @@ public class TrashBinZone : MonoBehaviour
     [Header("What can be trashed")]
     [SerializeField] private bool trashIngredients = true;
     [SerializeField] private bool trashPlates = false;
+    [SerializeField] private PlateSpawner plateSpawner;
 
     [Header("Behaviour")]
     [SerializeField] private bool requireTag = false;
@@ -38,11 +39,28 @@ public class TrashBinZone : MonoBehaviour
             Plate plate = other.GetComponentInParent<Plate>();
             if (plate != null)
             {
-                TrashObject(plate.gameObject);
+                TrashPlate(plate);
                 return;
             }
         }
     }
+
+    private void TrashPlate(Plate plate)
+    {
+        if (plate == null) return;
+
+        // звук
+        if (audioSource != null && trashSfx != null)
+            audioSource.PlayOneShot(trashSfx);
+
+        // уничтожаем тарелку
+        Destroy(plate.gameObject, destroyDelay);
+
+        // ?? СРАЗУ спавним новую
+        if (plateSpawner != null)
+            plateSpawner.SpawnPlate();
+    }
+
 
     private void TrashObject(GameObject go)
     {

@@ -11,6 +11,10 @@ public class CustomerManager : MonoBehaviour
     [SerializeField] private Transform spawnPoint;
     [SerializeField] private Transform exitPoint;
 
+    [Header("Audio")]
+    [SerializeField] private AudioSource uiAudioSource;
+    [SerializeField] private AudioClip bellEnterClip;
+
     [Header("Queue points (0 = at cashier)")]
     [SerializeField] private Transform[] queuePoints;
 
@@ -24,6 +28,10 @@ public class CustomerManager : MonoBehaviour
     [Header("Panic settings (smoke alarm)")]
     [SerializeField] private float panicCooldown = 6f;      // чтобы не срабатывать на каждый beep
     [SerializeField] private float panicRunSpeedMult = 2.2f;
+
+    [Header("Panic delay (seconds)")]
+    [SerializeField] private float panicDelayMin = 0f;
+    [SerializeField] private float panicDelayMax = 2f;
 
     private readonly List<Customer> queue = new List<Customer>();
     private float spawnTimer;
@@ -66,6 +74,19 @@ public class CustomerManager : MonoBehaviour
         }
     }
 
+    private System.Collections.IEnumerator PanicAfterDelay(Customer c, float delay)
+    {
+        if (c == null) yield break;
+
+        yield return new WaitForSeconds(delay);
+
+        // Если клиента уже уничтожили/он ушёл — просто выходим
+        if (c == null) yield break;
+
+        c.PanicRunToExit(panicRunSpeedMult);
+    }
+
+
     private void TrySpawnCustomer()
     {
         if (customerPrefab == null)
@@ -92,6 +113,9 @@ public class CustomerManager : MonoBehaviour
             return;
 
         GameObject go = Instantiate(customerPrefab, spawnPoint.position, spawnPoint.rotation);
+
+        if (uiAudioSource != null && bellEnterClip != null)
+            uiAudioSource.PlayOneShot(bellEnterClip);
 
         Customer c = go.GetComponent<Customer>();
         if (c == null)
@@ -190,32 +214,35 @@ public class CustomerManager : MonoBehaviour
     // PANIC FROM SMOKE ALARM
     // =========================
     private void OnSmokeAlarmBeep()
+{
+    if (panicTimer > 0f) return;
+    panicTimer = panicCooldown;
+
+    // Бежать некому, если 0-1 человек
+    if (queue.Count <= 1) return;
+
+    // Все, кто НЕ у кассы (индексы 1..), начинают паниковать через рандомную задержку
+    for (int i = queue.Count - 1; i >= 1; i--)
     {
-        if (panicTimer > 0f) return;
-        panicTimer = panicCooldown;
-
-        // Бежать некому, если 0-1 человек
-        if (queue.Count <= 1) return;
-
-        // Все, кто НЕ у кассы (индексы 1..), бегут
-        for (int i = queue.Count - 1; i >= 1; i--)
+        Customer c = queue[i];
+        if (c == null)
         {
-            Customer c = queue[i];
-            if (c == null)
-            {
-                queue.RemoveAt(i);
-                continue;
-            }
-
-            c.PanicRunToExit(panicRunSpeedMult);
             queue.RemoveAt(i);
+            continue;
         }
 
-        ReassignQueueTargets();
+        // ВАЖНО: убираем из очереди сразу, чтобы очередь сдвинулась,
+        // но сам клиент начнёт бежать через delay
+        queue.RemoveAt(i);
 
-        // Если вдруг никого не осталось (кроме кассы) — UI не трогаем.
-        // Если вообще никого не осталось — покажем ожидание:
-        if (queue.Count == 0)
-            OnActiveCustomerLeft?.Invoke();
+        float delay = UnityEngine.Random.Range(panicDelayMin, panicDelayMax);
+        StartCoroutine(PanicAfterDelay(c, delay));
     }
+
+    ReassignQueueTargets();
+
+    if (queue.Count == 0)
+        OnActiveCustomerLeft?.Invoke();
+}
+
 }

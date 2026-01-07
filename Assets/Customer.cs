@@ -14,6 +14,11 @@ public class Customer : MonoBehaviour
     public float neutralDuration = 20f;
     public float angryDuration = 15f; // сколько злой ДО ухода (с учётом mult)
 
+
+    [Header("Audio")]
+    [SerializeField] private AudioSource panicAudioSource;
+    [SerializeField] private AudioClip panicClip;
+
     [Header("Movement Speeds")]
     [SerializeField] private float walkSpeed = 1.8f; // ? быстрее чем было
     [SerializeField] private float runSpeed = 5f;  // ? быстрый бег
@@ -117,6 +122,8 @@ public class Customer : MonoBehaviour
         ApplyMoodVisual();
 
         SetTarget(exitPoint);
+        if (panicAudioSource != null && panicClip != null)
+            panicAudioSource.PlayOneShot(panicClip);
     }
 
 
