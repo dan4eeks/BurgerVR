@@ -25,8 +25,8 @@ public class Customer : MonoBehaviour
     [SerializeField] private float stopDistance = 0.02f;
 
     [Header("Movement Speeds")]
-    [SerializeField] private float walkSpeed = 1.8f;
-    [SerializeField] private float runSpeed = 5f;
+    [SerializeField] private float walkSpeed = 3f;
+    [SerializeField] private float runSpeed = 7.5f;
 
     public float rotateSpeed = 720f;
     [SerializeField] private float faceTargetRotateSpeed = 720f;

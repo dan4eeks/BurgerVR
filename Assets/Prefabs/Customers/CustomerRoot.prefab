@@ -60,7 +60,6 @@ MonoBehaviour:
   - {fileID: 1889313545690738, guid: ad37c0f463d2b0e429d42a12ec7b2469, type: 3}
   - {fileID: 1018949230691400, guid: d461c345ada76d14f94fe72087cec0f9, type: 3}
   - {fileID: 1581182825111960, guid: 5b920fc901e2cd945beaebdb578e5b09, type: 3}
-  - {fileID: 1581182825111960, guid: 5b920fc901e2cd945beaebdb578e5b09, type: 3}
   randomYaw: 1
 --- !u!114 &-2219053246157145930
 MonoBehaviour:
@@ -87,7 +86,6 @@ MonoBehaviour:
   stopDistance: 0.02
   walkSpeed: 1.8
   runSpeed: 5
-  panicSpeed: 3
   rotateSpeed: 720
   faceTargetRotateSpeed: 720
   playerLookTarget: {fileID: 0}
