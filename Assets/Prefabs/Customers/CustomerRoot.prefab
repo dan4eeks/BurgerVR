@@ -55,11 +55,11 @@ MonoBehaviour:
   - {fileID: 1784647339104494, guid: 1aeb5bfabdcdbcd4583e83139d952b1d, type: 3}
   - {fileID: 1441525330016004, guid: c0f44381dd01e904c87fad2431087f45, type: 3}
   - {fileID: 1876184970185692, guid: 83139230f1d12e941a1a4fe3717b6561, type: 3}
-  - {fileID: 1876184970185692, guid: 83139230f1d12e941a1a4fe3717b6561, type: 3}
   - {fileID: 1804036296530324, guid: 5082799ad37f92b4bb2aaba2bdb7a5d4, type: 3}
   - {fileID: 1736729122470676, guid: 6aadac4ba6f145a48863dc87f16916d6, type: 3}
   - {fileID: 1889313545690738, guid: ad37c0f463d2b0e429d42a12ec7b2469, type: 3}
   - {fileID: 1018949230691400, guid: d461c345ada76d14f94fe72087cec0f9, type: 3}
+  - {fileID: 1581182825111960, guid: 5b920fc901e2cd945beaebdb578e5b09, type: 3}
   - {fileID: 1581182825111960, guid: 5b920fc901e2cd945beaebdb578e5b09, type: 3}
   randomYaw: 1
 --- !u!114 &-2219053246157145930
@@ -82,8 +82,12 @@ MonoBehaviour:
   angryDuration: 20
   panicAudioSource: {fileID: 3080921551793143294}
   panicClip: {fileID: 8300000, guid: 35e674295cd586c4489a278754f818ec, type: 3}
+  animator: {fileID: 0}
+  speedParamName: Speed
+  stopDistance: 0.02
   walkSpeed: 1.8
   runSpeed: 5
+  panicSpeed: 3
   rotateSpeed: 720
   faceTargetRotateSpeed: 720
   playerLookTarget: {fileID: 0}
@@ -539,6 +543,7 @@ GameObject:
   - component: {fileID: 479235642134461651}
   - component: {fileID: 647550703611330157}
   - component: {fileID: 3235844428851651063}
+  - component: {fileID: 3888390374318299371}
   m_Layer: 0
   m_Name: AcceptButton
   m_TagString: Untagged
@@ -648,6 +653,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &3888390374318299371
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 942357239693647406}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80d5a28fc502408469030c50bb97eae1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  amplitude: 5
+  speed: 5
 --- !u!1 &5642537180792923097
 GameObject:
   m_ObjectHideFlags: 0

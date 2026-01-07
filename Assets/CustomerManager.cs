@@ -27,11 +27,10 @@ public class CustomerManager : MonoBehaviour
 
     [Header("Panic settings (smoke alarm)")]
     [SerializeField] private float panicCooldown = 6f;      // чтобы не срабатывать на каждый beep
-    [SerializeField] private float panicRunSpeedMult = 2.2f;
 
     [Header("Panic delay (seconds)")]
     [SerializeField] private float panicDelayMin = 0f;
-    [SerializeField] private float panicDelayMax = 2f;
+    [SerializeField] private float panicDelayMax = 1.5f;
 
     private readonly List<Customer> queue = new List<Customer>();
     private float spawnTimer;
@@ -82,8 +81,8 @@ public class CustomerManager : MonoBehaviour
 
         // Если клиента уже уничтожили/он ушёл — просто выходим
         if (c == null) yield break;
+        c.PanicRunToExit();
 
-        c.PanicRunToExit(panicRunSpeedMult);
     }
 
 

@@ -14,14 +14,20 @@ public class Customer : MonoBehaviour
     public float neutralDuration = 20f;
     public float angryDuration = 15f; // сколько злой ƒќ ухода (с учЄтом mult)
 
-
     [Header("Audio")]
     [SerializeField] private AudioSource panicAudioSource;
     [SerializeField] private AudioClip panicClip;
 
+    [Header("Animator")]
+    [SerializeField] private Animator animator;
+    [SerializeField] private string speedParamName = "Speed";
+    [Tooltip("≈сли слишком рано считает что 'стоит' Ч уменьши. ≈сли дЄргаетс€ Ч увеличь.")]
+    [SerializeField] private float stopDistance = 0.02f;
+
     [Header("Movement Speeds")]
-    [SerializeField] private float walkSpeed = 1.8f; // ? быстрее чем было
-    [SerializeField] private float runSpeed = 5f;  // ? быстрый бег
+    [SerializeField] private float walkSpeed = 1.8f;
+    [SerializeField] private float runSpeed = 5f;
+
     public float rotateSpeed = 720f;
     [SerializeField] private float faceTargetRotateSpeed = 720f;
 
@@ -31,9 +37,10 @@ public class Customer : MonoBehaviour
     private float moodTimer = 0f;
     private bool isLeaving = false;
     private bool isPanicRunning = false;
+    private bool isPanicking = false;
+
 
     private float currentSpeed;
-
     private int queueIndex = -1; // 0 = у кассы, 1+ = очередь
 
     private Transform targetPoint;
@@ -41,6 +48,20 @@ public class Customer : MonoBehaviour
     private CustomerManager manager;
 
     private bool cashierArrivedSent = false;
+
+    private int speedParamHash;
+
+    private void Awake()
+    {
+        if (animator == null)
+            animator = GetComponentInChildren<Animator>(true);
+
+        speedParamHash = Animator.StringToHash(speedParamName);
+
+        // ¬ажно: чтобы анимации обновл€лись даже когда персонаж "не видим" камерой (VR + bounds)
+        if (animator != null)
+            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+    }
 
     public void Init(CustomerManager mgr, Transform queuePoint, Transform exit, bool alwaysAngryFlag)
     {
@@ -63,6 +84,8 @@ public class Customer : MonoBehaviour
 
         SetTarget(queuePoint);
         ApplyMoodVisual();
+
+        SetAnimatorSpeed(0f);
     }
 
     public void OnQueueIndexChanged(int newIndex)
@@ -96,32 +119,36 @@ public class Customer : MonoBehaviour
 
         isLeaving = true;
         isPanicRunning = false;
+        isPanicking = false;
+
+        // обычный уход Ч шагом
         currentSpeed = walkSpeed;
 
-        // если он уходит обычным образом - scared не ставим
         cashierArrivedSent = true;
         SetTarget(exitPoint);
     }
 
+
     /// <summary>
-    /// ѕанический побег (когда "убегает") => только тут включаем Scared
+    /// ѕанический побег => включаем Scared “ќЋ№ ќ тут
     /// </summary>
-    public void PanicRunToExit(float speedMultiplier = 2.2f)
+    public void PanicRunToExit()
     {
         if (isLeaving) return;
 
         isLeaving = true;
-        cashierArrivedSent = true;
-
-        // ускор€ем
-        walkSpeed *= speedMultiplier;
-
-        // Scared включаем “ќЋ№ ќ при побеге
         isPanicRunning = true;
+        isPanicking = true;
+
+        // ?? —–ј«” Ѕ≈∆»ћ
+        currentSpeed = runSpeed;
+
         mood = CustomerMood.Scared;
         ApplyMoodVisual();
 
+        cashierArrivedSent = true;
         SetTarget(exitPoint);
+
         if (panicAudioSource != null && panicClip != null)
             panicAudioSource.PlayOneShot(panicClip);
     }
@@ -129,21 +156,17 @@ public class Customer : MonoBehaviour
 
     public void ForceAngry()
     {
-        if (isPanicRunning) return; // если уже убегает - пусть остаЄтс€ scared
+        if (isPanicRunning) return;
         if (alwaysAngry) return;
 
         mood = CustomerMood.Angry;
         ApplyMoodVisual();
     }
 
-    // public bool IsStandingAtCashier()
-    // {
-    //     return !isLeaving && queueIndex == 0;
-    // }
-
     private void Update()
     {
         MoveTowardsTarget();
+        UpdateAnimatorSpeed();
 
         // дошЄл до кассы
         if (!isLeaving && queueIndex == 0 && targetPoint != null && !cashierArrivedSent)
@@ -187,7 +210,7 @@ public class Customer : MonoBehaviour
         Vector3 to = targetPoint.position - transform.position;
         to.y = 0f;
 
-        if (to.magnitude < 0.02f) return;
+        if (to.magnitude < stopDistance) return;
 
         transform.position += to.normalized * (currentSpeed * Time.deltaTime);
 
@@ -198,13 +221,37 @@ public class Customer : MonoBehaviour
         }
     }
 
+    private void UpdateAnimatorSpeed()
+    {
+        if (animator == null) return;
+
+        float value = 0f;
+
+        if (targetPoint != null)
+        {
+            Vector3 to = targetPoint.position - transform.position;
+            to.y = 0f;
+
+            // пока реально идЄм/бежим Ч Speed > 0
+            if (to.magnitude >= stopDistance)
+                value = currentSpeed;
+        }
+
+        SetAnimatorSpeed(value);
+    }
+
+    private void SetAnimatorSpeed(float value)
+    {
+        if (animator == null) return;
+        animator.SetFloat(speedParamHash, value);
+    }
+
     private void UpdateMoodByTime()
     {
         float mult = (queueIndex >= 1) ? 2f : 1f;
 
         if (alwaysAngry)
         {
-            // всегда злой, уходит по общему ожиданию
             float totalWait = (happyDuration + neutralDuration + angryDuration) * mult;
 
             if (moodTimer >= totalWait)
@@ -283,22 +330,16 @@ public class Customer : MonoBehaviour
     }
 
     // вызываетс€ из CustomerManager.AcceptNextCustomer()
-    public void OnOrderAccepted()
-    {
-        // можно оставить пустым, но метод должен существовать
-    }
+    public void OnOrderAccepted() { }
 
     // вызываетс€ из CustomerOrderUI (после диктовки)
     public void ResetPatienceAfterDictation()
     {
         moodTimer = 0f;
-        // если у теб€ есть ещЄ таймеры дл€ злости/стадий Ч обнул€й и их тоже
     }
 
-    // вызываетс€ из CustomerManager (у теб€ уже где-то используетс€)
     public bool IsStandingAtCashier()
     {
         return !isLeaving && queueIndex == 0;
     }
-
 }
