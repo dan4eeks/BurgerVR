@@ -6,36 +6,36 @@ public class Customer : MonoBehaviour
     public CustomerMood mood = CustomerMood.Happy;
     [SerializeField] private CustomerMoodIcon moodIcon;
 
-    [Tooltip("если true - клиент всегда злой")]
+    [Tooltip("если true - клиент всегда злой (пока НЕ убегает панически)")]
     public bool alwaysAngry = false;
 
     [Header("Timing (seconds)")]
     public float happyDuration = 20f;
     public float neutralDuration = 20f;
-    public float angryDuration = 15f; // для обычного: после angryDuration уходит
+    public float angryDuration = 15f; // сколько злой ДО ухода (с учётом mult)
 
-    [Header("Movement")]
-    public float moveSpeed = 1.2f;
+    [Header("Movement Speeds")]
+    [SerializeField] private float walkSpeed = 1.8f; // ? быстрее чем было
+    [SerializeField] private float runSpeed = 5f;  // ? быстрый бег
     public float rotateSpeed = 720f;
     [SerializeField] private float faceTargetRotateSpeed = 720f;
-    [SerializeField] private CustomerOrderUI orderUI;
 
     [Header("Look at player when arrived at cashier")]
     [SerializeField] private Transform playerLookTarget; // обычно XR Camera
 
     private float moodTimer = 0f;
     private bool isLeaving = false;
+    private bool isPanicRunning = false;
+
+    private float currentSpeed;
 
     private int queueIndex = -1; // 0 = у кассы, 1+ = очередь
-    
-    private bool moodPaused = false;
+
     private Transform targetPoint;
     private Transform exitPoint;
     private CustomerManager manager;
 
     private bool cashierArrivedSent = false;
-
-    public void SetMoodPaused(bool paused) => moodPaused = paused;
 
     public void Init(CustomerManager mgr, Transform queuePoint, Transform exit, bool alwaysAngryFlag)
     {
@@ -47,6 +47,9 @@ public class Customer : MonoBehaviour
 
         moodTimer = 0f;
         isLeaving = false;
+        isPanicRunning = false;
+
+        currentSpeed = walkSpeed;
 
         cashierArrivedSent = false;
 
@@ -65,16 +68,14 @@ public class Customer : MonoBehaviour
 
         if (queueIndex == 0)
         {
-            // сброс таймера всем (важно для alwaysAngry, чтобы не "сгорал" мгновенно)
             moodTimer = 0f;
 
-            // обычный у кассы снова счастливый
-            if (!alwaysAngry)
+            // у кассы снова happy (если не alwaysAngry и не паника)
+            if (!alwaysAngry && !isPanicRunning)
                 mood = CustomerMood.Happy;
 
             ApplyMoodVisual();
 
-            // разрешаем отправку "дошёл до кассы"
             cashierArrivedSent = false;
         }
     }
@@ -84,24 +85,21 @@ public class Customer : MonoBehaviour
         targetPoint = point;
     }
 
-    public void OnOrderAccepted()
-    {
-        orderUI?.OnOrderAccepted();
-
-    }
-
     public void Leave()
     {
-        orderUI?.OnCustomerLeaving();
         if (isLeaving) return;
-        isLeaving = true;
 
-        cashierArrivedSent = true; // чтобы UI не показывал кнопку из-за этого клиента
+        isLeaving = true;
+        isPanicRunning = false;
+        currentSpeed = walkSpeed;
+
+        // если он уходит обычным образом - scared не ставим
+        cashierArrivedSent = true;
         SetTarget(exitPoint);
     }
 
     /// <summary>
-    /// Панический побег (для механики alarm).
+    /// Панический побег (когда "убегает") => только тут включаем Scared
     /// </summary>
     public void PanicRunToExit(float speedMultiplier = 2.2f)
     {
@@ -110,24 +108,37 @@ public class Customer : MonoBehaviour
         isLeaving = true;
         cashierArrivedSent = true;
 
-        moveSpeed *= speedMultiplier;
+        // ускоряем
+        walkSpeed *= speedMultiplier;
 
-        // Можно усилить визуально:
-        // mood = CustomerMood.Angry; ApplyMoodVisual();
+        // Scared включаем ТОЛЬКО при побеге
+        isPanicRunning = true;
+        mood = CustomerMood.Scared;
+        ApplyMoodVisual();
 
         SetTarget(exitPoint);
     }
 
-    public bool IsStandingAtCashier()
+
+    public void ForceAngry()
     {
-        return !isLeaving && queueIndex == 0;
+        if (isPanicRunning) return; // если уже убегает - пусть остаётся scared
+        if (alwaysAngry) return;
+
+        mood = CustomerMood.Angry;
+        ApplyMoodVisual();
     }
+
+    // public bool IsStandingAtCashier()
+    // {
+    //     return !isLeaving && queueIndex == 0;
+    // }
 
     private void Update()
     {
         MoveTowardsTarget();
 
-        // дошёл до кассы: только тогда показываем кнопку
+        // дошёл до кассы
         if (!isLeaving && queueIndex == 0 && targetPoint != null && !cashierArrivedSent)
         {
             Vector3 a = transform.position; a.y = 0f;
@@ -137,7 +148,6 @@ public class Customer : MonoBehaviour
             {
                 cashierArrivedSent = true;
 
-                // Повернуться к игроку
                 if (playerLookTarget != null)
                 {
                     StopAllCoroutines();
@@ -145,17 +155,15 @@ public class Customer : MonoBehaviour
                 }
 
                 manager?.NotifyCustomerArrivedAtCashier(this);
-                Debug.Log($"[Customer] Arrived at cashier: {name}");
-                orderUI?.OnReachedCashier();
             }
         }
 
-        if (!isLeaving && !moodPaused)
+        // настроение обновляем только если НЕ уходит и НЕ в панике
+        if (!isLeaving && !isPanicRunning)
         {
             moodTimer += Time.deltaTime;
             UpdateMoodByTime();
         }
-
 
         // дошёл до выхода
         if (isLeaving && targetPoint != null && Vector3.Distance(transform.position, targetPoint.position) < 0.15f)
@@ -174,7 +182,7 @@ public class Customer : MonoBehaviour
 
         if (to.magnitude < 0.02f) return;
 
-        transform.position += to.normalized * (moveSpeed * Time.deltaTime);
+        transform.position += to.normalized * (currentSpeed * Time.deltaTime);
 
         if (to.sqrMagnitude > 0.0001f)
         {
@@ -185,13 +193,11 @@ public class Customer : MonoBehaviour
 
     private void UpdateMoodByTime()
     {
-        // если стоит в очереди НЕ первым — настроение портится в 2 раза медленнее
         float mult = (queueIndex >= 1) ? 2f : 1f;
 
         if (alwaysAngry)
         {
-            // ВЕЧНО злой, но таймер ожидания как у обычного:
-            // обычный уходит после Happy + Neutral + Angry (с учётом mult)
+            // всегда злой, уходит по общему ожиданию
             float totalWait = (happyDuration + neutralDuration + angryDuration) * mult;
 
             if (moodTimer >= totalWait)
@@ -238,14 +244,6 @@ public class Customer : MonoBehaviour
             moodIcon.SetMood(mood);
     }
 
-    public void ForceAngry()
-    {
-        if (alwaysAngry) return;
-        mood = CustomerMood.Angry;
-        ApplyMoodVisual();
-    }
-
-
     private System.Collections.IEnumerator RotateToFaceTransform(Transform t)
     {
         if (t == null) yield break;
@@ -277,16 +275,23 @@ public class Customer : MonoBehaviour
             transform.rotation = Quaternion.LookRotation(finalDir.normalized, Vector3.up);
     }
 
+    // вызывается из CustomerManager.AcceptNextCustomer()
+    public void OnOrderAccepted()
+    {
+        // можно оставить пустым, но метод должен существовать
+    }
+
+    // вызывается из CustomerOrderUI (после диктовки)
     public void ResetPatienceAfterDictation()
     {
-        // сбрасываем ожидание
         moodTimer = 0f;
+        // если у тебя есть ещё таймеры для злости/стадий — обнуляй и их тоже
+    }
 
-        // если хочешь, чтобы после диктовки он снова начинал с Happy:
-        if (!alwaysAngry)
-            mood = CustomerMood.Happy;
-
-        ApplyMoodVisual();
+    // вызывается из CustomerManager (у тебя уже где-то используется)
+    public bool IsStandingAtCashier()
+    {
+        return !isLeaving && queueIndex == 0;
     }
 
 }

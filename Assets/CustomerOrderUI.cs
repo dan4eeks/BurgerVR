@@ -10,24 +10,19 @@ public class CustomerOrderUI : MonoBehaviour
     [SerializeField] private CustomerManager customerManager;
     [SerializeField] private OrderManager orderManager;
 
-    [SerializeField] private GameObject recipeBubbleRoot; // RecipeBubbleRoot
-    [SerializeField] private Image bubbleIcon;            // BubbleIcon (Image)
-
-
     [Header("Overhead UI (under MoodUI)")]
-    [SerializeField] private GameObject moodIconRoot;   // MoodIcon (или родитель)
-    [SerializeField] private Button acceptButton;       // AcceptButton
-    [SerializeField] private Image orderIcon;           // OrderIcon
+    [SerializeField] private Button acceptButton; // AcceptButton (Button)
+    [SerializeField] private GameObject recipeBubbleRoot; // RecipeBubbleRoot (GameObject)
+    [SerializeField] private Image bubbleIcon; // BubbleIcon (Image)
 
     [Header("Order playback")]
     [SerializeField] private float iconDuration = 1f;
 
     [Header("Sprites by IngredientType index")]
-    [Tooltip("Индекс = (int)IngredientType. Положи спрайты в том же порядке, что в enum IngredientType.")]
-    [SerializeField] private Sprite[] ingredientSprites;
+    [SerializeField] private Sprite[] ingredientSprites; // size = 8, index = (int)IngredientType
 
     [Header("Optional: HUD on player (recipe list)")]
-    [SerializeField] private RecipeHUDUI recipeHud; // можно пока не заполнять
+    [SerializeField] private RecipeHUDUI recipeHud;
 
     private Coroutine playbackCo;
 
@@ -38,6 +33,13 @@ public class CustomerOrderUI : MonoBehaviour
         if (orderManager == null) orderManager = FindObjectOfType<OrderManager>();
         if (recipeHud == null) recipeHud = FindObjectOfType<RecipeHUDUI>(true);
 
+        // авто-поиск UI по путям (чтобы не мучаться перетаскиванием)
+        if (acceptButton == null)
+        {
+            var t = transform.Find("MoodUI/AcceptButton");
+            if (t != null) acceptButton = t.GetComponent<Button>();
+        }
+
         if (recipeBubbleRoot == null)
         {
             var t = transform.Find("MoodUI/RecipeBubbleRoot");
@@ -46,163 +48,178 @@ public class CustomerOrderUI : MonoBehaviour
 
         if (bubbleIcon == null)
         {
-            var iconT = transform.Find("MoodUI/RecipeBubbleRoot/BubbleIcon");
-            if (iconT != null) bubbleIcon = iconT.GetComponent<UnityEngine.UI.Image>();
+            var t = transform.Find("MoodUI/RecipeBubbleRoot/BubbleIcon");
+            if (t != null) bubbleIcon = t.GetComponent<Image>();
         }
 
-        if (recipeBubbleRoot != null) recipeBubbleRoot.SetActive(false);
+        // стартовые состояния
+        SetAcceptVisible(false);
+        SetBubbleVisible(false);
 
-        if (moodIconRoot == null)
+        if (acceptButton != null)
         {
-            var t = transform.Find("MoodUI/MoodIcon");
-            if (t != null) moodIconRoot = t.gameObject;
+            acceptButton.onClick.RemoveAllListeners();
+            acceptButton.onClick.AddListener(OnAcceptClicked);
         }
-
-        // ? гарантия: эмоция всегда включена
-        if (moodIconRoot != null) moodIconRoot.SetActive(true);
     }
 
-    public void OnCustomerLeaving()
+    private void OnEnable()
     {
-        if (recipeHud != null)
-            recipeHud.HideHUD();
+        if (customerManager != null)
+        {
+            customerManager.OnCustomerArrivedAtCashier += HandleArrivedAtCashier;
+            customerManager.OnActiveCustomerLeft += HandleActiveCustomerLeft;
+        }
     }
 
+    private void OnDisable()
+    {
+        if (customerManager != null)
+        {
+            customerManager.OnCustomerArrivedAtCashier -= HandleArrivedAtCashier;
+            customerManager.OnActiveCustomerLeft -= HandleActiveCustomerLeft;
+        }
+    }
 
+    // CustomerManager вызывает, когда конкретный клиент реально дошёл до кассы (Q0)
+    private void HandleArrivedAtCashier(Customer c)
+    {
+        if (customer == null) return;
+        if (c != customer) return;
+
+        // показываем кнопку только если он реально стоит у кассы
+        if (!customer.IsStandingAtCashier()) return;
+
+        SetAcceptVisible(true);
+        SetBubbleVisible(false);
+        // чек НЕ показываем — он появится когда начнёт диктовать
+        if (recipeHud != null) recipeHud.HideHUD();
+    }
+
+    // Когда активный клиент ушёл/заказ завершён/кто-то ушёл злым — UI должен уйти в "ожидание"
+    private void HandleActiveCustomerLeft()
+    {
+        // на всякий случай прячем кнопку у всех
+        SetAcceptVisible(false);
+        SetBubbleVisible(false);
+
+        if (recipeHud != null) recipeHud.HideHUD();
+    }
+
+    private void OnAcceptClicked()
+    {
+        if (customer == null || customerManager == null || orderManager == null) return;
+
+        // защита от повторных нажатий/не того клиента
+        if (!customer.IsStandingAtCashier()) return;
+        if (!customerManager.CanAcceptOrder()) return;
+
+        // назначаем активного клиента
+        var accepted = customerManager.AcceptNextCustomer();
+        if (accepted != customer) return;
+
+        // убираем кнопку, начинаем заказ
+        SetAcceptVisible(false);
+
+        orderManager.StartNewOrder();
+        List<IngredientType> recipe = orderManager.GetCurrentRecipeCopy();
+
+        // старт диктовки
+        if (playbackCo != null) StopCoroutine(playbackCo);
+        playbackCo = StartCoroutine(PlayDictation(recipe));
+    }
 
     private IEnumerator PlayDictation(List<IngredientType> recipe)
     {
+        if (recipe == null || recipe.Count == 0) yield break;
+
+        // ? чек появляется только когда диктовка началась
         if (recipeHud != null)
         {
             recipeHud.ShowHUD();
-            recipeHud.ShowProgress(recipe, 0, ingredientSprites); // сначала пустой/0 элементов
+            recipeHud.ShowProgress(recipe, 0, ingredientSprites);
         }
 
-        if (recipe == null || recipe.Count == 0) yield break;
-
-        if (recipeBubbleRoot != null) recipeBubbleRoot.SetActive(true);
+        SetBubbleVisible(true);
 
         for (int i = 0; i < recipe.Count; i++)
         {
+            // bubble icon
             if (bubbleIcon != null)
                 bubbleIcon.sprite = GetSprite(recipe[i]);
-                bubbleIcon.GetComponent<AutoAspectImage>()?.Apply();
+
+            // чек заполняем по секундам (как диктует)
             if (recipeHud != null)
                 recipeHud.ShowProgress(recipe, i + 1, ingredientSprites);
 
             yield return new WaitForSeconds(iconDuration);
         }
 
-        if (recipeBubbleRoot != null) recipeBubbleRoot.SetActive(false);
+        // bubble исчезает, чек остаётся пока клиент не уйдёт (ты так хотел раньше)
+        SetBubbleVisible(false);
 
+        // сброс терпения после диктовки (если у тебя есть этот метод)
         customer.ResetPatienceAfterDictation();
     }
 
-
-    // Вызываем когда клиент РЕАЛЬНО дошёл до кассы
-    public void OnReachedCashier()
+    private Sprite GetSprite(IngredientType t)
     {
-        if (customerManager == null || orderManager == null || customer == null) return;
-        if (!customerManager.CanAcceptOrder()) return;
-
-        var accepted = customerManager.AcceptNextCustomer();
-        if (accepted != customer) return;
-
-        orderManager.StartNewOrder();
-        var recipe = orderManager.GetCurrentRecipeCopy();
-
-        // если хочешь — HUD можно запустить прогрессом, но не обязательно
-        // recipeHud.ShowProgress(recipe, 0, ingredientSprites);
-
-        if (playbackCo != null) StopCoroutine(playbackCo);
-        playbackCo = StartCoroutine(PlayDictation(recipe));
-    }
-
-
-
-    // Вызывается когда этого клиента назначили ActiveCustomer
-    public void OnOrderAccepted()
-    {
-        // кнопку точно скрываем
-        SetAcceptVisible(false);
-    }
-
-    private void OnAcceptClicked()
-    {
-        if (customerManager == null || orderManager == null || customer == null) return;
-
-        // Кнопка должна работать только если:
-        // - этот клиент стоит у кассы
-        // - активного клиента ещё нет
-        if (!customer.IsStandingAtCashier() || !customerManager.CanAcceptOrder())
-            return;
-
-        // Назначаем активного клиента (должен стать именно этот)
-        var accepted = customerManager.AcceptNextCustomer();
-        if (accepted != customer) return;
-
-        // Генерим заказ
-        orderManager.StartNewOrder();
-
-        // Забираем рецепт и:
-        // 1) показываем справа сверху (HUD), если подключен
-        // 2) проигрываем по 1 секунде над головой
-        var recipe = orderManager.GetCurrentRecipeCopy();
-        if (recipeHud != null)
-            recipeHud.Show(recipe, ingredientSprites);
-
-        if (playbackCo != null) StopCoroutine(playbackCo);
-        playbackCo = StartCoroutine(PlayIcons(recipe));
-    }
-
-    private IEnumerator PlayIcons(List<IngredientType> recipe)
-{
-    if (recipe == null || recipe.Count == 0) yield break;
-
-    // Пауза терпения на время диктовки (см. пункт 3)
-    customer.SetMoodPaused(true);
-
-    SetOrderIconVisible(true);
-
-    for (int i = 0; i < recipe.Count; i++)
-    {
-        // над головой
-        orderIcon.sprite = GetSprite(recipe[i]);
-
-        // ? на HUD — прогресс (первые i+1 ингредиентов)
-        if (recipeHud != null)
-            recipeHud.ShowProgress(recipe, i + 1, ingredientSprites);
-
-        yield return new WaitForSeconds(iconDuration);
-    }
-
-    SetOrderIconVisible(false);
-
-    // вернуть эмоцию + сброс терпения
-    if (moodIconRoot != null) moodIconRoot.SetActive(true);
-
-    customer.ResetPatienceAfterDictation();
-    customer.SetMoodPaused(false);
-}
-
-
-    private Sprite GetSprite(IngredientType type)
-    {
-        int idx = (int)type;
+        int idx = (int)t;
         if (ingredientSprites == null) return null;
         if (idx < 0 || idx >= ingredientSprites.Length) return null;
         return ingredientSprites[idx];
     }
 
-    private void SetAcceptVisible(bool v)
+    private void SetAcceptVisible(bool on)
     {
         if (acceptButton != null)
-            acceptButton.gameObject.SetActive(v);
+            acceptButton.gameObject.SetActive(on);
     }
 
-    private void SetOrderIconVisible(bool v)
+    private void SetBubbleVisible(bool on)
     {
-        if (orderIcon != null)
-            orderIcon.gameObject.SetActive(v);
+        if (recipeBubbleRoot != null)
+            recipeBubbleRoot.SetActive(on);
     }
+
+        // Compatibility: Customer.cs still calls these
+    public void OnOrderAccepted()
+    {
+        // На всякий случай прячем кнопку, чтобы не нажимали повторно
+        SetAcceptVisible(false);
+    }
+
+    public void OnCustomerLeaving()
+    {
+        // Клиент уходит -> прячем его UI и чек
+        SetAcceptVisible(false);
+        SetBubbleVisible(false);
+
+        if (playbackCo != null)
+        {
+            StopCoroutine(playbackCo);
+            playbackCo = null;
+        }
+
+        if (recipeHud != null)
+            recipeHud.HideHUD();
+    }
+
+    // Compatibility: Customer.cs calls this when the customer reaches the cashier.
+    // We only show the accept button here; dictation starts after clicking Accept.
+    public void OnReachedCashier()
+    {
+        if (customer == null) return;
+
+        // показываем кнопку только если реально у кассы
+        if (!customer.IsStandingAtCashier()) return;
+
+        SetAcceptVisible(true);
+        SetBubbleVisible(false);
+
+        if (recipeHud != null)
+            recipeHud.HideHUD();
+    }
+
+
 }
