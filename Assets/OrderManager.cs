@@ -44,6 +44,12 @@ public class OrderManager : MonoBehaviour
         }
     }
 
+    public List<IngredientType> GetCurrentRecipeCopy()
+    {
+        return new List<IngredientType>(currentRecipe);
+    }
+
+
     private void Update()
     {
         if (!orderActive) return;

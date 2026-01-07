@@ -3,11 +3,15 @@ using UnityEngine;
 public class SubmitZone : MonoBehaviour
 {
     [SerializeField] private OrderManager orderManager;
+    [SerializeField] private SubmitZoneHighlighter highlighter;
 
     private void Awake()
     {
         if (orderManager == null)
             orderManager = FindObjectOfType<OrderManager>();
+
+        if (highlighter == null)
+            highlighter = GetComponent<SubmitZoneHighlighter>();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -21,6 +25,11 @@ public class SubmitZone : MonoBehaviour
             return;
         }
 
+        // ? сдаём заказ
         orderManager.Submit(plate);
+
+        // ? и выключаем подсветку
+        if (highlighter != null)
+            highlighter.SetHighlight(false);
     }
 }

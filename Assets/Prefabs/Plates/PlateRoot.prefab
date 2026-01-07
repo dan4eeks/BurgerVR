@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 7420770298263219647}
   - component: {fileID: 7420770298263219619}
   - component: {fileID: 7420770298263219618}
+  - component: {fileID: -3453367373195835698}
   m_Layer: 0
   m_Name: PlateRoot
   m_TagString: Untagged
@@ -214,7 +215,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   buildSpot: {fileID: 0}
   Stack: 
+  PattyStates: 
+  DirtyFlags: 
   defaultLayerHeight: 0.03
+--- !u!114 &-3453367373195835698
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7420770298263219646}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc5bbe6a80107ba42a16a323bd1a80e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  completeOnType: 0
+  confirmDelay: 0.08
 --- !u!1 &7420770298466575161
 GameObject:
   m_ObjectHideFlags: 0

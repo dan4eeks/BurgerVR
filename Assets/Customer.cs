@@ -18,6 +18,7 @@ public class Customer : MonoBehaviour
     public float moveSpeed = 1.2f;
     public float rotateSpeed = 720f;
     [SerializeField] private float faceTargetRotateSpeed = 720f;
+    [SerializeField] private CustomerOrderUI orderUI;
 
     [Header("Look at player when arrived at cashier")]
     [SerializeField] private Transform playerLookTarget; // обычно XR Camera
@@ -26,12 +27,15 @@ public class Customer : MonoBehaviour
     private bool isLeaving = false;
 
     private int queueIndex = -1; // 0 = у кассы, 1+ = очередь
-
+    
+    private bool moodPaused = false;
     private Transform targetPoint;
     private Transform exitPoint;
     private CustomerManager manager;
 
     private bool cashierArrivedSent = false;
+
+    public void SetMoodPaused(bool paused) => moodPaused = paused;
 
     public void Init(CustomerManager mgr, Transform queuePoint, Transform exit, bool alwaysAngryFlag)
     {
@@ -82,11 +86,13 @@ public class Customer : MonoBehaviour
 
     public void OnOrderAccepted()
     {
-        // можно расширить позже
+        orderUI?.OnOrderAccepted();
+
     }
 
     public void Leave()
     {
+        orderUI?.OnCustomerLeaving();
         if (isLeaving) return;
         isLeaving = true;
 
@@ -139,14 +145,17 @@ public class Customer : MonoBehaviour
                 }
 
                 manager?.NotifyCustomerArrivedAtCashier(this);
+                Debug.Log($"[Customer] Arrived at cashier: {name}");
+                orderUI?.OnReachedCashier();
             }
         }
 
-        if (!isLeaving)
+        if (!isLeaving && !moodPaused)
         {
             moodTimer += Time.deltaTime;
             UpdateMoodByTime();
         }
+
 
         // дошёл до выхода
         if (isLeaving && targetPoint != null && Vector3.Distance(transform.position, targetPoint.position) < 0.15f)
@@ -229,6 +238,14 @@ public class Customer : MonoBehaviour
             moodIcon.SetMood(mood);
     }
 
+    public void ForceAngry()
+    {
+        if (alwaysAngry) return;
+        mood = CustomerMood.Angry;
+        ApplyMoodVisual();
+    }
+
+
     private System.Collections.IEnumerator RotateToFaceTransform(Transform t)
     {
         if (t == null) yield break;
@@ -259,4 +276,17 @@ public class Customer : MonoBehaviour
         if (finalDir.sqrMagnitude > 0.0001f)
             transform.rotation = Quaternion.LookRotation(finalDir.normalized, Vector3.up);
     }
+
+    public void ResetPatienceAfterDictation()
+    {
+        // сбрасываем ожидание
+        moodTimer = 0f;
+
+        // если хочешь, чтобы после диктовки он снова начинал с Happy:
+        if (!alwaysAngry)
+            mood = CustomerMood.Happy;
+
+        ApplyMoodVisual();
+    }
+
 }

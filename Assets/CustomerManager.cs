@@ -157,12 +157,16 @@ public class CustomerManager : MonoBehaviour
 
         queue.Remove(done);
 
+        if (!orderOk && done != null)
+            done.ForceAngry();
+        
         done?.Leave();
 
         ReassignQueueTargets();
 
         // UI -> ожидание до следующего "дошёл к кассе"
         OnActiveCustomerLeft?.Invoke();
+
     }
 
     public void OnCustomerLeftAngry(Customer c)

@@ -1,8 +1,11 @@
 public enum IngredientType
 {
-    BunBottom,
-    Patty,
-    Cheese,
     BunTop,
-    Tomato
+    Tomato,
+    Cucumber,
+    Onion,
+    Lettuce,
+    Cheese,
+    Patty,
+    BunBottom
 }
