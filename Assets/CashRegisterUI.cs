@@ -43,12 +43,18 @@ public class CashRegisterUI : MonoBehaviour
     }
 
     private void OnCustomerArrivedAtCashier(Customer c)
-    {
-        // Клиент реально стоит у кассы -> показываем кнопку
-        if (acceptOrderButton != null) acceptOrderButton.SetActive(true);
-        if (statusText != null) statusText.text = "";
-        if (hintText != null) hintText.text = "";
-    }
+{
+    // кнопки больше нет
+    if (acceptOrderButton != null)
+        acceptOrderButton.SetActive(false);
+
+    if (statusText != null)
+        statusText.text = "";
+
+    if (hintText != null)
+        hintText.text = "";
+}
+
 
     public void ShowWaiting()
     {

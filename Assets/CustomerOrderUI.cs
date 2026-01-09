@@ -83,18 +83,30 @@ public class CustomerOrderUI : MonoBehaviour
 
     // CustomerManager вызывает, когда конкретный клиент реально дошЄл до кассы (Q0)
     private void HandleArrivedAtCashier(Customer c)
-    {
-        if (customer == null) return;
-        if (c != customer) return;
+{
+    if (customer == null) return;
+    if (c != customer) return;
 
-        // показываем кнопку только если он реально стоит у кассы
-        if (!customer.IsStandingAtCashier()) return;
+    // защита
+    if (!customer.IsStandingAtCashier()) return;
+    if (customerManager == null || orderManager == null) return;
+    if (!customerManager.CanAcceptOrder()) return;
 
-        SetAcceptVisible(true);
-        SetBubbleVisible(false);
-        // чек Ќ≈ показываем Ч он по€витс€ когда начнЄт диктовать
-        if (recipeHud != null) recipeHud.HideHUD();
-    }
+    // ? ј¬“ќ-ѕ–»Ќя“»≈
+    var accepted = customerManager.AcceptNextCustomer();
+    if (accepted != customer) return;
+
+    // старт заказа
+    orderManager.StartNewOrder();
+    List<IngredientType> recipe = orderManager.GetCurrentRecipeCopy();
+
+    // старт диктовки
+    if (playbackCo != null)
+        StopCoroutine(playbackCo);
+
+    playbackCo = StartCoroutine(PlayDictation(recipe));
+}
+
 
     //  огда активный клиент ушЄл/заказ завершЄн/кто-то ушЄл злым Ч UI должен уйти в "ожидание"
     private void HandleActiveCustomerLeft()
