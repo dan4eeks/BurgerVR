@@ -63,12 +63,22 @@ public class Plate : MonoBehaviour
         t.localRotation = Quaternion.identity;
         t.localPosition = new Vector3(0f, currentHeight, 0f);
 
-        // делаем "одно целое" с тарелкой
+        // делаем "одно целое" с тарелкой (XR-safe)
+        var grab = ing.GetComponent<UnityEngine.XR.Interaction.Toolkit.XRGrabInteractable>();
+        if (grab != null) grab.enabled = false; // больше нельзя взять
+
         Rigidbody rb = ing.GetComponent<Rigidbody>();
-        if (rb != null) Destroy(rb);
+        if (rb != null)
+        {
+            rb.isKinematic = true;
+            rb.useGravity = false;
+            rb.velocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
 
         Collider col = ing.GetComponent<Collider>();
         if (col != null) col.isTrigger = false;
+
 
         // 1) Тип ингредиента
         Stack.Add(ing.type);

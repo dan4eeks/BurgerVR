@@ -270,19 +270,23 @@ public class Customer : MonoBehaviour
         // Вечно злой: он всегда Angry и просто уходит через angryT
         if (alwaysAngry)
         {
+            // Всегда злой по виду, но ждёт полный цикл
             if (mood != CustomerMood.Angry)
             {
                 mood = CustomerMood.Angry;
                 ApplyMoodVisual();
             }
 
-            if (moodTimer >= angryT)
+            float totalWait = happyT + neutralT + angryT;
+
+            if (moodTimer >= totalWait)
             {
                 Leave();
                 manager?.OnCustomerLeftAngry(this);
             }
             return;
         }
+
 
         // Обычный клиент: Happy -> Neutral -> Angry -> уход
         if (mood == CustomerMood.Happy && moodTimer >= happyT)
