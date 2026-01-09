@@ -10,9 +10,16 @@ public class Customer : MonoBehaviour
     public bool alwaysAngry = false;
 
     [Header("Timing (seconds)")]
-    public float happyDuration = 20f;
-    public float neutralDuration = 20f;
-    public float angryDuration = 15f; // сколько злой ДО ухода (с учётом mult)
+    public float happyDuration = 30f;
+    public float neutralDuration = 30f;
+    public float angryDuration = 20f; // сколько злой ДО ухода (с учётом mult)
+
+
+    [Header("Cashier timing override (only when queueIndex == 0)")]
+    [SerializeField] private bool useCashierTimings = true;
+    [SerializeField] private float cashierHappyDuration = 30f;
+    [SerializeField] private float cashierNeutralDuration = 30f;
+    [SerializeField] private float cashierAngryDuration = 20f;
 
     [Header("Audio")]
     [SerializeField] private AudioSource panicAudioSource;
@@ -27,6 +34,9 @@ public class Customer : MonoBehaviour
     [Header("Movement Speeds")]
     [SerializeField] private float walkSpeed = 3f;
     [SerializeField] private float runSpeed = 7.5f;
+
+    [Header("Cashier angry leave delay")]
+    [SerializeField] private float cashierAngryLeaveDelay = 10f; // сколько стоит злой у кассы, прежде чем уйти
 
     public float rotateSpeed = 720f;
     [SerializeField] private float faceTargetRotateSpeed = 720f;
@@ -155,13 +165,18 @@ public class Customer : MonoBehaviour
 
 
     public void ForceAngry()
-    {
-        if (isPanicRunning) return;
-        if (alwaysAngry) return;
+{
+    if (isPanicRunning) return;
+    if (alwaysAngry) return;
 
-        mood = CustomerMood.Angry;
-        ApplyMoodVisual();
-    }
+    mood = CustomerMood.Angry;
+
+    // ? ВАЖНО: иначе может уйти мгновенно, если timer уже большой
+    moodTimer = 0f;
+
+    ApplyMoodVisual();
+}
+
 
     private void Update()
     {
@@ -248,13 +263,20 @@ public class Customer : MonoBehaviour
 
     private void UpdateMoodByTime()
     {
-        float mult = (queueIndex >= 1) ? 2f : 1f;
+        float happyT = happyDuration;
+        float neutralT = neutralDuration;
+        float angryT = angryDuration;
 
+        // Вечно злой: он всегда Angry и просто уходит через angryT
         if (alwaysAngry)
         {
-            float totalWait = (happyDuration + neutralDuration + angryDuration) * mult;
+            if (mood != CustomerMood.Angry)
+            {
+                mood = CustomerMood.Angry;
+                ApplyMoodVisual();
+            }
 
-            if (moodTimer >= totalWait)
+            if (moodTimer >= angryT)
             {
                 Leave();
                 manager?.OnCustomerLeftAngry(this);
@@ -262,10 +284,7 @@ public class Customer : MonoBehaviour
             return;
         }
 
-        float happyT = happyDuration * mult;
-        float neutralT = neutralDuration * mult;
-        float angryT = angryDuration * mult;
-
+        // Обычный клиент: Happy -> Neutral -> Angry -> уход
         if (mood == CustomerMood.Happy && moodTimer >= happyT)
         {
             mood = CustomerMood.Neutral;
@@ -288,6 +307,8 @@ public class Customer : MonoBehaviour
             manager?.OnCustomerLeftAngry(this);
         }
     }
+
+
 
     private void ApplyMoodVisual()
     {
@@ -334,9 +355,13 @@ public class Customer : MonoBehaviour
 
     // вызывается из CustomerOrderUI (после диктовки)
     public void ResetPatienceAfterDictation()
-    {
+{
+    // В очереди можно сбрасывать (если хочешь),
+    // но у кассы это сбивает фазу ожидания.
+    if (queueIndex >= 1)
         moodTimer = 0f;
-    }
+}
+
 
     public bool IsStandingAtCashier()
     {

@@ -14,7 +14,7 @@ public class OrderManager : MonoBehaviour
     [SerializeField] private TMP_Text resultText;
 
     [Header("Order timing")]
-    [SerializeField] private float maxCookTime = 30f;
+    [SerializeField] private float maxCookTime = 80f;
 
     private readonly List<IngredientType> currentRecipe = new List<IngredientType>();
 
@@ -59,9 +59,7 @@ public class OrderManager : MonoBehaviour
             FailByTimeout();
     }
 
-    // =========================
-    //  ЗАПУСК НОВОГО ЗАКАЗА
-    // =========================
+
     public void StartNewOrder()
     {
         orderActive = true;
@@ -157,24 +155,28 @@ public class OrderManager : MonoBehaviour
     }
 
     private void FailByTimeout()
+{
+    orderActive = false;
+
+    if (recipeText != null) recipeText.text = "";
+
+    if (resultText != null)
     {
-        orderActive = false;
-
-        if (recipeText != null) recipeText.text = "";
-
-        if (resultText != null)
-        {
-            resultText.text = "Клиент ушёл\nОжидание клиента...";
-            resultText.color = Color.white;
-        }
-
-        // Уведомляем UI через CustomerManager (у тебя это уже заведено)
-        // Если активный клиент был принят — убираем его как "плохой заказ"
-        if (customerManager != null && customerManager.ActiveCustomer != null)
-            customerManager.CompleteActiveCustomer(false);
-        else
-            customerManager?.OnActiveCustomerLeft?.Invoke();
+        resultText.text = "Слишком долго...";
+        resultText.color = Color.red;
     }
+
+    var c = customerManager != null ? customerManager.ActiveCustomer : null;
+    if (c != null)
+    {
+        c.ForceAngry();
+    }
+    else
+    {
+        customerManager?.OnActiveCustomerLeft?.Invoke();
+    }
+}
+
 
     // =========================
     //  ПРОВЕРКА ПРОЖАРКИ

@@ -3629,7 +3629,7 @@ MonoBehaviour:
   customerManager: {fileID: 1868602901}
   recipeText: {fileID: 913109280}
   resultText: {fileID: 1163768430}
-  maxCookTime: 30
+  maxCookTime: 80
 --- !u!4 &1144429964
 Transform:
   m_ObjectHideFlags: 0
