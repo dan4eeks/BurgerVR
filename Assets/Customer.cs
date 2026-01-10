@@ -33,6 +33,13 @@ public class Customer : MonoBehaviour
     [Tooltip("Если слишком рано считает что 'стоит' — уменьши. Если дёргается — увеличь.")]
     [SerializeField] private float stopDistance = 0.02f;
 
+    [Header("Order Reaction Anim")]
+    [SerializeField] private string thinkTrigger = "Think";
+    [SerializeField] private string happyTrigger = "Happy";
+    [SerializeField] private string neutralTrigger = "Neutral";
+    [SerializeField] private string angryTrigger = "Angry";
+
+
     [Header("Movement Speeds")]
     [SerializeField] private float walkSpeed = 3f;
     [SerializeField] private float runSpeed = 7.5f;
@@ -51,6 +58,8 @@ public class Customer : MonoBehaviour
     private bool isPanicRunning = false;
     private bool isPanicking = false;
 
+    private bool isReactingToOrder = false;
+    public bool IsReactingToOrder => isReactingToOrder;
 
     private float currentSpeed;
     private int queueIndex = -1; // 0 = у кассы, 1+ = очередь
@@ -205,12 +214,12 @@ public class Customer : MonoBehaviour
             }
         }
 
-        // настроение обновляем только если НЕ уходит и НЕ в панике
-        if (!isLeaving && !isPanicRunning)
+        if (!isLeaving && !isPanicRunning && !isReactingToOrder)
         {
             moodTimer += Time.deltaTime;
             UpdateMoodByTime();
         }
+
 
         // дошёл до выхода
         if (isLeaving && targetPoint != null && Vector3.Distance(transform.position, targetPoint.position) < 0.15f)
@@ -376,15 +385,27 @@ public class Customer : MonoBehaviour
 
     public void StartThinking()
     {
-        reactionState = CustomerReactionState.Thinking;
-        // тут позже будет анимация + звук
+        isReactingToOrder = true;
+        mood = CustomerMood.Thinking;
+        ApplyMoodVisual();
+        if (animator != null && !string.IsNullOrEmpty(thinkTrigger))
+            animator.SetTrigger(thinkTrigger);
     }
 
     public void ApplyOrderResult(CustomerMood resultMood)
     {
-        reactionState = CustomerReactionState.Result;
         mood = resultMood;
         ApplyMoodVisual();
-    }
 
+        if (animator == null) return;
+
+        string trig =
+            resultMood == CustomerMood.Happy ? happyTrigger :
+            resultMood == CustomerMood.Neutral ? neutralTrigger :
+            resultMood == CustomerMood.Angry ? angryTrigger :
+            null;
+
+        if (!string.IsNullOrEmpty(trig))
+            animator.SetTrigger(trig);
+    }
 }

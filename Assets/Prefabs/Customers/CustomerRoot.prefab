@@ -30,7 +30,7 @@ Transform:
   m_GameObject: {fileID: 271643692038658252}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
   m_Children:
   - {fileID: 271643692217946060}
   - {fileID: 271643692713178444}
@@ -79,6 +79,7 @@ MonoBehaviour:
   happyDuration: 30
   neutralDuration: 30
   angryDuration: 20
+  reactionState: 0
   useCashierTimings: 1
   cashierHappyDuration: 30
   cashierNeutralDuration: 30
@@ -458,6 +459,7 @@ MonoBehaviour:
   neutral: {fileID: 21300000, guid: 5fe2827e401a21543a0f26f7719c0864, type: 3}
   angry: {fileID: 21300000, guid: f33fd114b884f6049ba8e3e0443d0664, type: 3}
   scared: {fileID: 21300000, guid: 2aef852f4a3eea04ca582e3c31aeba9a, type: 3}
+  thinking: {fileID: 21300000, guid: 027fdc777930a2f499b962553d74e89c, type: 3}
 --- !u!1 &942279430657994480
 GameObject:
   m_ObjectHideFlags: 0

@@ -9,7 +9,9 @@ public class CustomerMoodIcon : MonoBehaviour
     [SerializeField] private Sprite happy;
     [SerializeField] private Sprite neutral;
     [SerializeField] private Sprite angry;
-    [SerializeField] private Sprite scared; // ? NEW
+    [SerializeField] private Sprite scared;
+    [SerializeField] private Sprite thinking;
+
 
     private void Awake()
     {
@@ -34,6 +36,9 @@ public class CustomerMoodIcon : MonoBehaviour
                 break;
             case CustomerMood.Scared:
                 image.sprite = scared;
+                break;
+            case CustomerMood.Thinking:
+                image.sprite = thinking;
                 break;
         }
     }

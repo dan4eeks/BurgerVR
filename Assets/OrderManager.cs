@@ -21,6 +21,10 @@ public class OrderManager : MonoBehaviour
     [Header("Order timing")]
     [SerializeField] private float maxCookTime = 160f;
 
+    [Header("Thinking SFX")]
+    [SerializeField] private AudioSource reactionAudioSource;
+    [SerializeField] private AudioClip drumrollClip;
+
     private readonly List<IngredientType> currentRecipe = new List<IngredientType>();
 
     private bool orderActive = false;
@@ -56,17 +60,23 @@ public class OrderManager : MonoBehaviour
         if (customer == null)
             yield break;
 
-        // 1?? Клиент "думает"
         customer.StartThinking();
 
-        float delay = UnityEngine.Random.Range(thinkingMinTime, thinkingMaxTime);
-        yield return new WaitForSeconds(delay);
+    if (reactionAudioSource != null && drumrollClip != null)
+    {
+        reactionAudioSource.Stop();
+        reactionAudioSource.clip = drumrollClip;
+        reactionAudioSource.loop = true;
+        reactionAudioSource.Play();
+    }
 
-        // 2?? Показываем результат
-        customer.ApplyOrderResult(resultMood);
+    float delay = UnityEngine.Random.Range(thinkingMinTime, thinkingMaxTime);
+    yield return new WaitForSeconds(delay);
 
-        // ? НИЧЕГО БОЛЬШЕ ТУТ ПОКА НЕ ДЕЛАЕМ
-        // (уход / столики / экономика — позже)
+    if (reactionAudioSource != null && reactionAudioSource.isPlaying)
+        reactionAudioSource.Stop();
+
+    customer.ApplyOrderResult(resultMood);
     }
 
 
