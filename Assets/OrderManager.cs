@@ -64,8 +64,25 @@ public class OrderManager : MonoBehaviour
         // 1?? THINKING
         customer.StartThinking();
 
+        // ?? START DRUMROLL
+        if (reactionAudioSource != null && drumrollClip != null)
+        {
+            reactionAudioSource.Stop();
+            reactionAudioSource.clip = drumrollClip;
+            reactionAudioSource.loop = true;
+            reactionAudioSource.Play();
+        }
+        else
+        {
+            Debug.LogWarning($"Drumroll missing. source={(reactionAudioSource != null)} clip={(drumrollClip != null)}");
+        }
+
         float thinkingDelay = UnityEngine.Random.Range(thinkingMinTime, thinkingMaxTime);
         yield return new WaitForSeconds(thinkingDelay);
+
+        // ?? STOP DRUMROLL
+        if (reactionAudioSource != null && reactionAudioSource.isPlaying)
+            reactionAudioSource.Stop();
 
         // 2?? RESULT (‡ÌËÏ‡ˆËˇ + Á‚ÛÍ)
         customer.ApplyOrderResult(resultMood);
@@ -73,14 +90,15 @@ public class OrderManager : MonoBehaviour
         // 3?? ? ∆ƒ®Ã, œŒ ¿ «¿ ŒÕ◊»“—ﬂ «¬”  –≈¿ ÷»»
         float reactionWait = customer.LastReactionDuration;
         if (reactionWait <= 0f)
-            reactionWait = 0.25f; // Á‡˘ËÚ‡, ÂÒÎË ÍÎËÔ‡ ÌÂÚ
+            reactionWait = 0.25f;
 
         yield return new WaitForSeconds(reactionWait);
 
-        // 4?? ?? “”“  À»≈Õ“ ”’Œƒ»“ (Œ◊≈–≈ƒ‹ ƒ¬»√¿≈“—ﬂ)
+        // 4?? ??  À»≈Õ“ ”’Œƒ»“ (Œ◊≈–≈ƒ‹ ƒ¬»√¿≈“—ﬂ)
         bool orderOk = (resultMood != CustomerMood.Angry);
         customerManager?.CompleteActiveCustomer(orderOk);
     }
+
 
     public List<IngredientType> GetCurrentRecipeCopy()
     {
