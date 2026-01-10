@@ -39,6 +39,14 @@ public class Customer : MonoBehaviour
     [SerializeField] private string neutralTrigger = "Neutral";
     [SerializeField] private string angryTrigger = "Angry";
 
+    [Header("Reaction SFX")]
+    [SerializeField] private AudioSource reactionAudioSource;
+    [SerializeField] private AudioClip happyReactionClip;
+    [SerializeField] private AudioClip neutralReactionClip;
+    [SerializeField] private AudioClip angryReactionClip;
+
+    [SerializeField] private float reactionVolume = 1f;
+
 
     [Header("Movement Speeds")]
     [SerializeField] private float walkSpeed = 3f;
@@ -394,18 +402,38 @@ public class Customer : MonoBehaviour
 
     public void ApplyOrderResult(CustomerMood resultMood)
     {
+        reactionState = CustomerReactionState.Result;
+
         mood = resultMood;
         ApplyMoodVisual();
 
-        if (animator == null) return;
+        // Анимация (если ты уже добавил триггеры)
+        if (animator != null)
+        {
+            string trig =
+                resultMood == CustomerMood.Happy ? happyTrigger :
+                resultMood == CustomerMood.Neutral ? neutralTrigger :
+                resultMood == CustomerMood.Angry ? angryTrigger :
+                null;
 
-        string trig =
-            resultMood == CustomerMood.Happy ? happyTrigger :
-            resultMood == CustomerMood.Neutral ? neutralTrigger :
-            resultMood == CustomerMood.Angry ? angryTrigger :
-            null;
+            if (!string.IsNullOrEmpty(trig))
+                animator.SetTrigger(trig);
+        }
 
-        if (!string.IsNullOrEmpty(trig))
-            animator.SetTrigger(trig);
+        // ?? SFX реакции
+        if (reactionAudioSource != null)
+        {
+            AudioClip clip =
+                resultMood == CustomerMood.Happy ? happyReactionClip :
+                resultMood == CustomerMood.Neutral ? neutralReactionClip :
+                resultMood == CustomerMood.Angry ? angryReactionClip :
+                null;
+
+            if (clip != null)
+            {
+                reactionAudioSource.Stop(); // чтобы не накладывалось
+                reactionAudioSource.PlayOneShot(clip, reactionVolume);
+            }
+        }
     }
 }
