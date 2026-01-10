@@ -114,7 +114,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a7b5d5014d473a48aab0b8127c72dcb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  type: 2
+  type: 0
   layerHeight: 0.03
   snapped: 0
   spawner: {fileID: 0}

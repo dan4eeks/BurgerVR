@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &8994928182599934735
+--- !u!1 &1006035868795645851
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,50 +8,50 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 8994928182599934730}
-  - component: {fileID: 8994928182599934731}
-  - component: {fileID: 8994928182599934728}
-  - component: {fileID: 8994928182599934734}
-  - component: {fileID: 8994928182599934725}
-  - component: {fileID: 4480637963290835259}
-  - component: {fileID: -3793423783965798884}
-  - component: {fileID: -3927759381015632621}
+  - component: {fileID: 485818002700104993}
+  - component: {fileID: 3535927634307512964}
+  - component: {fileID: 1654743262578216526}
+  - component: {fileID: 87610852057081305}
+  - component: {fileID: 87610852057081311}
+  - component: {fileID: 87610852057081309}
+  - component: {fileID: 87610852057081308}
+  - component: {fileID: 87610852057081310}
   m_Layer: 0
-  m_Name: Cheese_ROOT
+  m_Name: Tomatoes_ROOT
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &8994928182599934730
+--- !u!4 &485818002700104993
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8994928182599934735}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.232, y: 0.6757, z: -0.053}
-  m_LocalScale: {x: 0.12, y: 0.003, z: 0.12}
+  m_GameObject: {fileID: 1006035868795645851}
+  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.345, y: 1.1991366, z: 2.422}
+  m_LocalScale: {x: 1.5, y: 1, z: 1.5}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &8994928182599934731
+--- !u!33 &3535927634307512964
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8994928182599934735}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!23 &8994928182599934728
+  m_GameObject: {fileID: 1006035868795645851}
+  m_Mesh: {fileID: 2534964839176971238, guid: e3986013bb4c7a449bf7bcac4edc7c7f, type: 3}
+--- !u!23 &1654743262578216526
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8994928182599934735}
+  m_GameObject: {fileID: 1006035868795645851}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -64,7 +64,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 06612ff0aabe9954a800085ed5aeb831, type: 2}
+  - {fileID: 2100000, guid: 63c627fb572500d4ca4ee83e9d13f3a4, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -86,73 +86,42 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!54 &8994928182599934734
+--- !u!54 &87610852057081305
 Rigidbody:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8994928182599934735}
+  m_GameObject: {fileID: 1006035868795645851}
   serializedVersion: 2
   m_Mass: 0.2
   m_Drag: 0
-  m_AngularDrag: 0.15
+  m_AngularDrag: 0.03
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 2
---- !u!114 &8994928182599934725
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8994928182599934735}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9a7b5d5014d473a48aab0b8127c72dcb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  type: 5
-  layerHeight: 0.009
-  snapped: 0
-  spawner: {fileID: 0}
---- !u!65 &4480637963290835259
+--- !u!65 &87610852057081311
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8994928182599934735}
+  m_GameObject: {fileID: 1006035868795645851}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 1, y: 1.4159977, z: 1}
-  m_Center: {x: 0, y: 0.02565682, z: 0}
---- !u!114 &-3793423783965798884
+  m_Size: {x: 0.08703562, y: 0.009344339, z: 0.07425754}
+  m_Center: {x: -0.0113149285, y: 0.00024056435, z: 0.004277545}
+--- !u!114 &87610852057081309
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8994928182599934735}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0894b54379a96804eb09151ea38c5cb1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  floorTag: Floor
-  dirtOverlayMaterial: {fileID: 2100000, guid: d85b0c991d7ab78488a309346114f2f4, type: 2}
-  targetRenderer: {fileID: 0}
---- !u!114 &-3927759381015632621
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8994928182599934735}
+  m_GameObject: {fileID: 1006035868795645851}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0ad34abafad169848a38072baa96cdb2, type: 3}
@@ -281,3 +250,34 @@ MonoBehaviour:
   m_StartingSingleGrabTransformers: []
   m_StartingMultipleGrabTransformers: []
   m_AddDefaultGrabTransformers: 1
+--- !u!114 &87610852057081308
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1006035868795645851}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0894b54379a96804eb09151ea38c5cb1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  floorTag: Floor
+  dirtOverlayMaterial: {fileID: 2100000, guid: d85b0c991d7ab78488a309346114f2f4, type: 2}
+  targetRenderer: {fileID: 0}
+--- !u!114 &87610852057081310
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1006035868795645851}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a7b5d5014d473a48aab0b8127c72dcb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  type: 1
+  layerHeight: 0.005
+  snapped: 0
+  spawner: {fileID: 0}
