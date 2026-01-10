@@ -10,10 +10,12 @@ public class Customer : MonoBehaviour
     public bool alwaysAngry = false;
 
     [Header("Timing (seconds)")]
-    public float happyDuration = 30f;
-    public float neutralDuration = 30f;
-    public float angryDuration = 20f; // сколько злой ДО ухода (с учётом mult)
+    public float happyDuration = 60f;
+    public float neutralDuration = 60f;
+    public float angryDuration = 40f; // сколько злой ДО ухода (с учётом mult)
 
+    [Header("Order Reaction")]
+    public CustomerReactionState reactionState = CustomerReactionState.None;
 
     [Header("Cashier timing override (only when queueIndex == 0)")]
     [SerializeField] private bool useCashierTimings = true;
@@ -359,16 +361,30 @@ public class Customer : MonoBehaviour
 
     // вызывается из CustomerOrderUI (после диктовки)
     public void ResetPatienceAfterDictation()
-{
-    // В очереди можно сбрасывать (если хочешь),
-    // но у кассы это сбивает фазу ожидания.
-    if (queueIndex >= 1)
-        moodTimer = 0f;
-}
+    {
+        // В очереди можно сбрасывать (если хочешь),
+        // но у кассы это сбивает фазу ожидания.
+        if (queueIndex >= 1)
+            moodTimer = 0f;
+    }
 
 
     public bool IsStandingAtCashier()
     {
         return !isLeaving && queueIndex == 0;
     }
+
+    public void StartThinking()
+    {
+        reactionState = CustomerReactionState.Thinking;
+        // тут позже будет анимация + звук
+    }
+
+    public void ApplyOrderResult(CustomerMood resultMood)
+    {
+        reactionState = CustomerReactionState.Result;
+        mood = resultMood;
+        ApplyMoodVisual();
+    }
+
 }

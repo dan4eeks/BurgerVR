@@ -1,3 +1,4 @@
+using System.Collections;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -13,8 +14,12 @@ public class OrderManager : MonoBehaviour
     [SerializeField] private TMP_Text recipeText;
     [SerializeField] private TMP_Text resultText;
 
+    [Header("Customer Reaction")]
+    [SerializeField] private float thinkingMinTime = 3f;
+    [SerializeField] private float thinkingMaxTime = 4f;
+
     [Header("Order timing")]
-    [SerializeField] private float maxCookTime = 80f;
+    [SerializeField] private float maxCookTime = 160f;
 
     private readonly List<IngredientType> currentRecipe = new List<IngredientType>();
 
@@ -43,6 +48,27 @@ public class OrderManager : MonoBehaviour
             resultText.color = Color.white;
         }
     }
+
+    private Coroutine reactionCoroutine;
+
+    private IEnumerator HandleCustomerReaction(Customer customer, CustomerMood resultMood)
+    {
+        if (customer == null)
+            yield break;
+
+        // 1?? Клиент "думает"
+        customer.StartThinking();
+
+        float delay = UnityEngine.Random.Range(thinkingMinTime, thinkingMaxTime);
+        yield return new WaitForSeconds(delay);
+
+        // 2?? Показываем результат
+        customer.ApplyOrderResult(resultMood);
+
+        // ? НИЧЕГО БОЛЬШЕ ТУТ ПОКА НЕ ДЕЛАЕМ
+        // (уход / столики / экономика — позже)
+    }
+
 
     public List<IngredientType> GetCurrentRecipeCopy()
     {
@@ -146,10 +172,23 @@ public class OrderManager : MonoBehaviour
         // скрываем рецепт после сдачи
         if (recipeText != null) recipeText.text = "";
 
-        // Клиент доволен только если Excellent
         bool orderOk = (grade == OrderGrade.Excellent);
-        if (customerManager != null)
-            customerManager.CompleteActiveCustomer(orderOk);
+
+        Customer customer = customerManager != null
+            ? customerManager.ActiveCustomer
+            : null;
+
+
+        CustomerMood resultMood =
+            orderOk ? CustomerMood.Happy : CustomerMood.Angry;
+        // (Neutral добавим позже по оценке)
+
+        if (reactionCoroutine != null)
+            StopCoroutine(reactionCoroutine);
+
+        reactionCoroutine = StartCoroutine(
+            HandleCustomerReaction(customer, resultMood)
+        );
 
         RespawnPlate();
     }
