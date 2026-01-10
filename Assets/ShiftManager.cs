@@ -29,6 +29,39 @@ public class ShiftManager : MonoBehaviour
     [SerializeField] private int baseClients = 3;
     [SerializeField] private int clientsStepPerDay = 1;
 
+    [System.Serializable]
+    public struct DaySettings
+    {
+        public int day;
+        public int targetCustomers;
+        public int recipeIngredientsTotal;
+        public float happyTime;
+        public float neutralTime;
+        public float angryTime;
+        public float pattyCookTime;
+        public float spawnInterval;
+    }
+
+    [SerializeField] private DaySettings[] days = new DaySettings[]
+    {
+        new DaySettings{ day=1, targetCustomers=3,  recipeIngredientsTotal=3, happyTime=60, neutralTime=60, angryTime=40, pattyCookTime=22, spawnInterval=25 },
+        new DaySettings{ day=2, targetCustomers=4,  recipeIngredientsTotal=4, happyTime=54, neutralTime=54, angryTime=35, pattyCookTime=21, spawnInterval=23 },
+        new DaySettings{ day=3, targetCustomers=5,  recipeIngredientsTotal=4, happyTime=48, neutralTime=48, angryTime=30, pattyCookTime=19, spawnInterval=21 },
+        new DaySettings{ day=4, targetCustomers=6,  recipeIngredientsTotal=5, happyTime=42, neutralTime=42, angryTime=25, pattyCookTime=18, spawnInterval=19 },
+        new DaySettings{ day=5, targetCustomers=7,  recipeIngredientsTotal=5, happyTime=36, neutralTime=36, angryTime=20, pattyCookTime=16, spawnInterval=17 },
+        new DaySettings{ day=6, targetCustomers=8,  recipeIngredientsTotal=6, happyTime=30, neutralTime=30, angryTime=15, pattyCookTime=15, spawnInterval=15 },
+        new DaySettings{ day=7, targetCustomers=10, recipeIngredientsTotal=6, happyTime=25, neutralTime=25, angryTime=10, pattyCookTime=14, spawnInterval=13 },
+    };
+
+    private DaySettings GetDay(int day)
+    {
+        // если вышли за массив — берём последний день
+        for (int i = 0; i < days.Length; i++)
+            if (days[i].day == day) return days[i];
+
+        return days[days.Length - 1];
+    }
+
     private int currentTargetClients = 0;
     private int clientsServedThisShift = 0;
     public static int StartDay = 1;
@@ -273,6 +306,17 @@ public class ShiftManager : MonoBehaviour
 
         if (introScreen != null)
             yield return introScreen.Play(currentShift, targetClients);
+
+        DaySettings s = GetDay(currentShift);
+
+        // 1) Настройки тайминга и размера рецепта
+        orderManager.ApplyDaySettings(s.happyTime, s.neutralTime, s.angryTime, s.recipeIngredientsTotal);
+
+        // 2) Настройки спавна: ровно N клиентов на смену
+        customerManager.ConfigureShiftSpawning(s.targetCustomers, s.spawnInterval);
+
+        // 3) Настройка жарки котлеты
+        PattyCookable.CookTimeSeconds = s.pattyCookTime;
 
         StartShiftInternal(targetClients);
     }

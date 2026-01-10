@@ -4,6 +4,7 @@ public class PattyCookable : MonoBehaviour
 {
     // ?? Глобальное событие: прозвучал "alarm beep" от сгоревшей котлеты
     public static System.Action OnSmokeAlarmBeepGlobal;
+    public static float CookTimeSeconds = 22f; // x по умолчанию
 
     [Header("Timing (seconds on grill)")]
     [SerializeField] private float timeToCooked = 30f;

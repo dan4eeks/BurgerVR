@@ -21,6 +21,14 @@ public class OrderManager : MonoBehaviour
     [Header("Order timing")]
     [SerializeField] private float maxCookTime = 160f;
 
+    [Header("Cook time mood windows")]
+    [SerializeField] private float happyWindow = 60f;
+    [SerializeField] private float neutralWindow = 60f;
+    [SerializeField] private float angryWindow = 40f;
+
+    [Header("Recipe size (total ingredients)")]
+    [SerializeField] private int recipeTotalIngredients = 3;
+
     [Header("Thinking SFX")]
     [SerializeField] private AudioSource reactionAudioSource;
     [SerializeField] private AudioClip drumrollClip;
@@ -29,6 +37,22 @@ public class OrderManager : MonoBehaviour
 
     private bool orderActive = false;
     private float cookTimer = 0f;
+
+
+    public void ApplyDaySettings(
+        float happySeconds,
+        float neutralSeconds,
+        float angrySeconds,
+        int totalIngredients)
+    {
+        happyWindow = Mathf.Max(1f, happySeconds);
+        neutralWindow = Mathf.Max(0f, neutralSeconds);
+        angryWindow = Mathf.Max(0f, angrySeconds);
+
+        maxCookTime = happyWindow + neutralWindow + angryWindow;
+
+        recipeTotalIngredients = Mathf.Clamp(totalIngredients, 3, 12);
+    }
 
     public event Action<Customer, CustomerMood> OnOrderEvaluated;
 
@@ -175,6 +199,21 @@ public class OrderManager : MonoBehaviour
             resultMood = CustomerMood.Happy;
         }
 
+        // === TIME-BASED MOOD (твоя логика 60/60/40 и т.д.) ===
+        CustomerMood timeMood;
+        float t = cookTimer;
+
+        if (t <= happyWindow)
+            timeMood = CustomerMood.Happy;
+        else if (t <= happyWindow + neutralWindow)
+            timeMood = CustomerMood.Neutral;
+        else
+            timeMood = CustomerMood.Angry;
+
+        // Берём худшее настроение из (points mood) и (time mood)
+        resultMood = WorstMood(resultMood, timeMood);
+
+
         // 3) Обновляем UI (по желанию, удобно для отладки)
         if (resultText != null)
         {
@@ -262,11 +301,13 @@ public class OrderManager : MonoBehaviour
     {
         currentRecipe.Clear();
 
-        // База
+        // Минимум 3: BunBottom + Patty + BunTop
+        int total = Mathf.Max(3, recipeTotalIngredients);
+        int extrasNeeded = total - 3;
+
         currentRecipe.Add(IngredientType.BunBottom);
         currentRecipe.Add(IngredientType.Patty);
 
-        // Универсальные "добавки" из enum (без жёстких имён вроде Cheese)
         IngredientType[] all = (IngredientType[])Enum.GetValues(typeof(IngredientType));
         List<IngredientType> extras = new List<IngredientType>();
 
@@ -279,14 +320,15 @@ public class OrderManager : MonoBehaviour
             extras.Add(v);
         }
 
-        int extrasCount = extras.Count == 0 ? 0 : UnityEngine.Random.Range(0, 3); // 0..2
-        for (int i = 0; i < extrasCount; i++)
+        for (int i = 0; i < extrasNeeded; i++)
         {
+            if (extras.Count == 0) break;
             currentRecipe.Add(extras[UnityEngine.Random.Range(0, extras.Count)]);
         }
 
         currentRecipe.Add(IngredientType.BunTop);
     }
+
 
     private void UpdateRecipeUI()
     {
@@ -401,4 +443,13 @@ public class OrderManager : MonoBehaviour
         }
         return true;
     }
+
+    private CustomerMood WorstMood(CustomerMood a, CustomerMood b)
+    {
+        // Angry хуже Neutral хуже Happy
+        if (a == CustomerMood.Angry || b == CustomerMood.Angry) return CustomerMood.Angry;
+        if (a == CustomerMood.Neutral || b == CustomerMood.Neutral) return CustomerMood.Neutral;
+        return CustomerMood.Happy;
+    }
+
 }

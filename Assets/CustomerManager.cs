@@ -35,9 +35,28 @@ public class CustomerManager : MonoBehaviour
     private readonly List<Customer> queue = new List<Customer>();
     private float spawnTimer;
 
+    public bool SpawningEnabled { get; private set; } = true;
+
+    private int spawnLimitThisShift = int.MaxValue;
+    private int spawnedThisShift = 0;
+
+    public int SpawnedThisShift => spawnedThisShift;
+
+    // (опционально, если надо слушать из ShiftManager)
+    public Action<Customer> OnCustomerSpawned;
+
     private float panicTimer = 0f;
 
-    public bool SpawningEnabled { get; private set; } = true;
+    public void ConfigureShiftSpawning(int customersTarget, float newSpawnInterval)
+    {
+        spawnLimitThisShift = Mathf.Max(0, customersTarget);
+        spawnedThisShift = 0;
+
+        spawnInterval = Mathf.Max(0.1f, newSpawnInterval);
+        spawnTimer = spawnInterval;
+
+        SpawningEnabled = true;
+    }
 
     public void SetSpawningEnabled(bool enabled)
     {
@@ -84,6 +103,9 @@ public class CustomerManager : MonoBehaviour
         if (!SpawningEnabled)
             return;
 
+        if (spawnedThisShift >= spawnLimitThisShift)
+            return;
+
         spawnTimer -= Time.deltaTime;
         if (spawnTimer <= 0f)
         {
@@ -91,6 +113,7 @@ public class CustomerManager : MonoBehaviour
             TrySpawnCustomer();
         }
     }
+
 
     public void ClearAllCustomers()
     {
@@ -175,6 +198,9 @@ public class CustomerManager : MonoBehaviour
         bool alwaysAngry = (UnityEngine.Random.value < alwaysAngryChance);
 
         c.Init(this, queuePoints[myIndex], exitPoint, alwaysAngry);
+
+        spawnedThisShift++;
+        OnCustomerSpawned?.Invoke(c);
 
         ReassignQueueTargets();
     }
