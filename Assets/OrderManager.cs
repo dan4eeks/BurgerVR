@@ -57,39 +57,30 @@ public class OrderManager : MonoBehaviour
 
     private IEnumerator HandleCustomerReaction(Customer customer, CustomerMood resultMood)
     {
+        Debug.Log("HandleCustomerReaction started");
         if (customer == null)
             yield break;
 
+        // 1?? THINKING
         customer.StartThinking();
 
-    if (reactionAudioSource != null && drumrollClip != null)
-    {
-        reactionAudioSource.Stop();
-        reactionAudioSource.clip = drumrollClip;
-        reactionAudioSource.loop = true;
-        reactionAudioSource.Play();
+        float thinkingDelay = UnityEngine.Random.Range(thinkingMinTime, thinkingMaxTime);
+        yield return new WaitForSeconds(thinkingDelay);
+
+        // 2?? RESULT (анимация + звук)
+        customer.ApplyOrderResult(resultMood);
+
+        // 3?? ? ЖДЁМ, ПОКА ЗАКОНЧИТСЯ ЗВУК РЕАКЦИИ
+        float reactionWait = customer.LastReactionDuration;
+        if (reactionWait <= 0f)
+            reactionWait = 0.25f; // защита, если клипа нет
+
+        yield return new WaitForSeconds(reactionWait);
+
+        // 4?? ?? ТУТ КЛИЕНТ УХОДИТ (ОЧЕРЕДЬ ДВИГАЕТСЯ)
+        bool orderOk = (resultMood != CustomerMood.Angry);
+        customerManager?.CompleteActiveCustomer(orderOk);
     }
-
-    float delay = UnityEngine.Random.Range(thinkingMinTime, thinkingMaxTime);
-    yield return new WaitForSeconds(delay);
-
-    if (reactionAudioSource != null && reactionAudioSource.isPlaying)
-        reactionAudioSource.Stop();
-
-    customer.ApplyOrderResult(resultMood);
-
-    float reactionWait = (customer != null) ? customer.LastReactionDuration : 0f;
-
-    // страховка: если клипа нет, всё равно чуть подождём
-    if (reactionWait <= 0f) reactionWait = 0.25f;
-
-    yield return new WaitForSeconds(reactionWait);
-
-    // ? теперь можно завершать заказ и уводить клиента (и продвинуть очередь)
-    bool orderOk = (resultMood == CustomerMood.Happy); // временно (neutral подключим позже)
-    customerManager?.CompleteActiveCustomer(orderOk);
-    }
-
 
     public List<IngredientType> GetCurrentRecipeCopy()
     {
@@ -122,120 +113,89 @@ public class OrderManager : MonoBehaviour
         }
     }
 
+    public void NotifyPlateSubmitted()
+    {
+        if (plateSpawner != null)
+            plateSpawner.OnPlateSubmitted();
+    }
+
+
     // =========================
     //  SUBMIT ЗАКАЗА
     // =========================
-    public void Submit(Plate plate)
+    public bool Submit(Plate plate)
     {
-        if (plate == null) return;
+        Debug.Log($"OrderManager.Submit called. orderActive={orderActive}");
+        if (!orderActive || plate == null)
+            return false;
 
-        // ? ВСЕГДА очищаем тарелку и спавним новую (чтобы тарелки не "зависали")
-        void RespawnPlate()
+        // 1) Считаем штрафные очки
+        int points = CalculatePenaltyPoints(plate);
+
+        // 2) Определяем настроение клиента по очкам + учитываем "вечно злого"
+        Customer customer = (customerManager != null) ? customerManager.ActiveCustomer : null;
+
+        CustomerMood resultMood;
+        if (customer != null && customer.alwaysAngry)
         {
-            Destroy(plate.gameObject);
-            if (plateSpawner != null)
-                plateSpawner.OnPlateSubmitted();
+            resultMood = CustomerMood.Angry;
         }
-
-        // Если заказа нет — просто переспавним тарелку и выходим
-        if (!orderActive)
+        else if (points >= 10)
         {
-            RespawnPlate();
-            return;
+            resultMood = CustomerMood.Angry;
         }
-
-        bool recipeOk = SameSequence(plate.Stack, currentRecipe);
-        bool pattiesOk = recipeOk && PattiesCookedCorrectly(plate);
-        bool dirtyOk = recipeOk && !HasAnyDirtyIngredient(plate);
-
-        OrderGrade grade;
-        if (!recipeOk)
-            grade = OrderGrade.Fail;
-        else if (!pattiesOk || !dirtyOk)
-            grade = OrderGrade.Bad;
+        else if (points >= 5)
+        {
+            resultMood = CustomerMood.Neutral;
+        }
         else
-            grade = OrderGrade.Excellent;
-
-        // UI
-        if (resultText != null)
         {
-            switch (grade)
-            {
-                case OrderGrade.Fail:
-                    resultText.text = "ORDER FAIL";
-                    resultText.color = Color.red;
-                    break;
-
-                case OrderGrade.Bad:
-                    // покажем причину
-                    string reason = "";
-                    if (!pattiesOk) reason += " Patty raw/burnt;";
-                    if (!dirtyOk) reason += " Ingredients dirty;";
-                    resultText.text = "ORDER BAD!" + reason;
-                    resultText.color = Color.yellow;
-                    break;
-
-                case OrderGrade.Excellent:
-                    resultText.text = "ORDER EXCELLENT!";
-                    resultText.color = Color.green;
-                    break;
-            }
-
-            // + настроение клиента (кроме alwaysAngry)
-            Customer c = customerManager != null ? customerManager.ActiveCustomer : null;
-            if (c != null && !c.alwaysAngry)
-                resultText.text += "\nMood: " + c.mood;
+            resultMood = CustomerMood.Happy;
         }
 
-        // завершаем заказ
+        // 3) Обновляем UI (по желанию, удобно для отладки)
+        if (resultText != null)
+            resultText.text = $"Penalty: {points}\nResult: {resultMood}";
+
+        // 4) Заказ завершён (чтобы таймер не тикал дальше)
         orderActive = false;
 
-        // скрываем рецепт после сдачи
-        if (recipeText != null) recipeText.text = "";
-
-        bool orderOk = (grade == OrderGrade.Excellent);
-
-        Customer customer = customerManager != null
-            ? customerManager.ActiveCustomer
-            : null;
-
-
-        CustomerMood resultMood =
-            orderOk ? CustomerMood.Happy : CustomerMood.Angry;
-        // (Neutral добавим позже по оценке)
-
+        // 5) СТАРТ реакции: Thinking -> Result -> (после звука) уход
         if (reactionCoroutine != null)
             StopCoroutine(reactionCoroutine);
 
-        reactionCoroutine = StartCoroutine(
-            HandleCustomerReaction(customer, resultMood)
-        );
+        reactionCoroutine = StartCoroutine(HandleCustomerReaction(customer, resultMood));
 
-        RespawnPlate();
+        // 6) Очистка тарелки/спавн новой — это у тебя уже было раньше.
+        // Если у тебя здесь была логика очистки/удаления — оставь её как было.
+
+        // Submit принят (мы запустили реакцию)
+        return true;
     }
+
 
     private void FailByTimeout()
-{
-    orderActive = false;
-
-    if (recipeText != null) recipeText.text = "";
-
-    if (resultText != null)
     {
-        resultText.text = "Слишком долго...";
-        resultText.color = Color.red;
-    }
+        orderActive = false;
 
-    var c = customerManager != null ? customerManager.ActiveCustomer : null;
-    if (c != null)
-    {
-        c.ForceAngry();
+        if (recipeText != null) recipeText.text = "";
+
+        if (resultText != null)
+        {
+            resultText.text = "Слишком долго...";
+            resultText.color = Color.red;
+        }
+
+        var c = customerManager != null ? customerManager.ActiveCustomer : null;
+        if (c != null)
+        {
+            c.ForceAngry();
+        }
+        else
+        {
+            customerManager?.OnActiveCustomerLeft?.Invoke();
+        }
     }
-    else
-    {
-        customerManager?.OnActiveCustomerLeft?.Invoke();
-    }
-}
 
 
     // =========================
@@ -311,6 +271,61 @@ public class OrderManager : MonoBehaviour
         recipeText.text = "Recipe:\n";
         foreach (IngredientType ing in currentRecipe)
             recipeText.text += ing + "\n";
+    }
+
+    private int CalculatePenaltyPoints(Plate plate)
+    {
+        int points = 0;
+
+        // (1) котлеты: +10 за каждую НЕ Cooked
+        if (plate.PattyStates != null)
+        {
+            for (int i = 0; i < plate.PattyStates.Count; i++)
+            {
+                if (plate.PattyStates[i] != PattyCookState.Cooked)
+                    points += 10;
+            }
+        }
+
+        // (2) грязь: +10 за каждый DirtyFlags[i] == true
+        if (plate.DirtyFlags != null)
+        {
+            for (int i = 0; i < plate.DirtyFlags.Count; i++)
+            {
+                if (plate.DirtyFlags[i])
+                    points += 10;
+            }
+        }
+
+        // (3)(5) время готовки
+        float ratio = (maxCookTime > 0f) ? (cookTimer / maxCookTime) : 0f;
+        if (ratio >= 0.75f && ratio < 1.0f) points += 5;
+        else if (ratio >= 0.50f && ratio < 0.75f) points += 2;
+
+        // (4) промахи по рецепту: +3 за каждый mismatch/лишний/недостающий
+        int aCount = plate.Stack != null ? plate.Stack.Count : 0;
+        int bCount = currentRecipe != null ? currentRecipe.Count : 0;
+        int max = Mathf.Max(aCount, bCount);
+
+        int misses = 0;
+        for (int i = 0; i < max; i++)
+        {
+            bool hasA = i < aCount;
+            bool hasB = i < bCount;
+
+            if (!hasA || !hasB)
+            {
+                misses++; // лишний или недостающий
+                continue;
+            }
+
+            if (plate.Stack[i] != currentRecipe[i])
+                misses++;
+        }
+
+        points += misses * 3;
+
+        return points;
     }
 
     // =========================

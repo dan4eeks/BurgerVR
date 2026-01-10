@@ -82,9 +82,9 @@ MonoBehaviour:
   angryDuration: 20
   reactionState: 0
   useCashierTimings: 1
-  cashierHappyDuration: 30
-  cashierNeutralDuration: 30
-  cashierAngryDuration: 20
+  cashierHappyDuration: 60
+  cashierNeutralDuration: 60
+  cashierAngryDuration: 40
   panicAudioSource: {fileID: 3080921551793143294}
   panicClip: {fileID: 8300000, guid: 35e674295cd586c4489a278754f818ec, type: 3}
   animator: {fileID: 0}

@@ -16,8 +16,10 @@ public class SubmitZone : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        Debug.Log("SubmitZone: OnTriggerEnter " + other.name);
         Plate plate = other.GetComponentInParent<Plate>();
         if (plate == null) return;
+        Debug.Log("SubmitZone: plate detected " + plate.name);
 
         if (orderManager == null)
         {
@@ -25,11 +27,12 @@ public class SubmitZone : MonoBehaviour
             return;
         }
 
-        // ? сдаём заказ
-        orderManager.Submit(plate);
+        // если сабмит НЕ принят — тарелку не трогаем
+        if (!orderManager.Submit(plate))
+            return;
 
-        // ? и выключаем подсветку
-        if (highlighter != null)
-            highlighter.SetHighlight(false);
+        // ? сабмит принят -> удаляем тарелку и спавним новую
+        Destroy(plate.gameObject);
+        orderManager.NotifyPlateSubmitted(); // сделаем ниже
     }
 }
