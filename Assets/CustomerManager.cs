@@ -37,6 +37,22 @@ public class CustomerManager : MonoBehaviour
 
     private float panicTimer = 0f;
 
+    public bool SpawningEnabled { get; private set; } = true;
+
+    public void SetSpawningEnabled(bool enabled)
+    {
+        SpawningEnabled = enabled;
+    }
+
+    public int QueueCount => queue.Count;
+    public bool HasPanicRunningCustomerInQueue()
+    {
+        // В твоём Customer есть приватные флаги isPanicRunning/isPanicking,
+        // поэтому напрямую проверить нельзя без правок Customer.
+        // Сделаем по-другому: ShiftManager будет считать "паникой" именно факт SmokeAlarmBeep.
+        return false;
+    }
+
     public Customer ActiveCustomer { get; private set; }
 
     // ?? Клиент реально дошёл до кассы и стоит там
@@ -64,6 +80,9 @@ public class CustomerManager : MonoBehaviour
     {
         if (panicTimer > 0f)
             panicTimer -= Time.deltaTime;
+
+        if (!SpawningEnabled)
+            return;
 
         spawnTimer -= Time.deltaTime;
         if (spawnTimer <= 0f)
