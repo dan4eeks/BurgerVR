@@ -148,10 +148,10 @@ public class OrderManager : MonoBehaviour
             return false;
 
         // 1) Считаем штрафные очки
-        int points = CalculatePenaltyPoints(plate);
+        var (points, report) = CalculatePenaltyPoints(plate);
 
         // 2) Определяем настроение клиента по очкам + учитываем "вечно злого"
-        Customer customer = (customerManager != null) ? customerManager.ActiveCustomer : null;
+        Customer customer = customerManager != null ? customerManager.ActiveCustomer : null;
 
         CustomerMood resultMood;
         if (customer != null && customer.alwaysAngry)
@@ -173,7 +173,9 @@ public class OrderManager : MonoBehaviour
 
         // 3) Обновляем UI (по желанию, удобно для отладки)
         if (resultText != null)
-            resultText.text = $"Penalty: {points}\nResult: {resultMood}";
+        {
+            resultText.text = report;
+        }
 
         // 4) Заказ завершён (чтобы таймер не тикал дальше)
         orderActive = false;
@@ -291,49 +293,74 @@ public class OrderManager : MonoBehaviour
             recipeText.text += ing + "\n";
     }
 
-    private int CalculatePenaltyPoints(Plate plate)
+    private (int points, string report) CalculatePenaltyPoints(Plate plate)
     {
         int points = 0;
+        System.Text.StringBuilder report = new System.Text.StringBuilder();
 
-        // (1) котлеты: +10 за каждую НЕ Cooked
+        // === 0) ПУСТАЯ ТАРЕЛКА — ЖЁСТКИЙ ФЕЙЛ ===
+        if ((plate.Stack == null || plate.Stack.Count == 0) &&
+            currentRecipe != null && currentRecipe.Count > 0)
+        {
+            points += 10;
+            report.AppendLine("+10 пустая тарелка");
+        }
+
+        // === 1) КОТЛЕТЫ: сырая / пережаренная ===
         if (plate.PattyStates != null)
         {
             for (int i = 0; i < plate.PattyStates.Count; i++)
             {
                 if (plate.PattyStates[i] != PattyCookState.Cooked)
+                {
                     points += 10;
+                    report.AppendLine($"+10 котлета #{i + 1} не приготовлена");
+                }
             }
         }
 
-        // (2) грязь: +10 за каждый DirtyFlags[i] == true
+        // === 2) ГРЯЗНЫЕ ИНГРЕДИЕНТЫ ===
         if (plate.DirtyFlags != null)
         {
             for (int i = 0; i < plate.DirtyFlags.Count; i++)
             {
                 if (plate.DirtyFlags[i])
+                {
                     points += 10;
+                    report.AppendLine($"+10 грязный ингредиент #{i + 1}");
+                }
             }
         }
 
-        // (3)(5) время готовки
+        // === 3 + 5) ВРЕМЯ ПРИГОТОВЛЕНИЯ ===
         float ratio = (maxCookTime > 0f) ? (cookTimer / maxCookTime) : 0f;
-        if (ratio >= 0.75f && ratio < 1.0f) points += 5;
-        else if (ratio >= 0.50f && ratio < 0.75f) points += 2;
 
-        // (4) промахи по рецепту: +3 за каждый mismatch/лишний/недостающий
-        int aCount = plate.Stack != null ? plate.Stack.Count : 0;
-        int bCount = currentRecipe != null ? currentRecipe.Count : 0;
-        int max = Mathf.Max(aCount, bCount);
+        if (ratio >= 0.75f && ratio < 1.0f)
+        {
+            points += 5;
+            report.AppendLine("+5 слишком долгое приготовление (75–99%)");
+        }
+        else if (ratio >= 0.50f && ratio < 0.75f)
+        {
+            points += 2;
+            report.AppendLine("+2 среднее время приготовления (50–74%)");
+        }
+
+        // === 4) ПРОМАХИ ПО РЕЦЕПТУ ===
+        int plateCount = plate.Stack != null ? plate.Stack.Count : 0;
+        int recipeCount = currentRecipe != null ? currentRecipe.Count : 0;
+        int max = Mathf.Max(plateCount, recipeCount);
 
         int misses = 0;
+
         for (int i = 0; i < max; i++)
         {
-            bool hasA = i < aCount;
-            bool hasB = i < bCount;
+            bool hasPlate = i < plateCount;
+            bool hasRecipe = i < recipeCount;
 
-            if (!hasA || !hasB)
+            if (!hasPlate || !hasRecipe)
             {
-                misses++; // лишний или недостающий
+                misses++;
                 continue;
             }
 
@@ -341,10 +368,19 @@ public class OrderManager : MonoBehaviour
                 misses++;
         }
 
-        points += misses * 3;
+        if (misses > 0)
+        {
+            int missPoints = misses * 3;
+            points += missPoints;
+            report.AppendLine($"+{missPoints} ошибки в рецепте ({misses}?3)");
+        }
 
-        return points;
+        // === ИТОГ ===
+        report.AppendLine($"ИТОГО ШТРАФ: {points}");
+
+        return (points, report.ToString());
     }
+
 
     // =========================
     //  UTILS
