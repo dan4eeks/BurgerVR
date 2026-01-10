@@ -77,6 +77,17 @@ public class OrderManager : MonoBehaviour
         reactionAudioSource.Stop();
 
     customer.ApplyOrderResult(resultMood);
+
+    float reactionWait = (customer != null) ? customer.LastReactionDuration : 0f;
+
+    // страховка: если клипа нет, всё равно чуть подождём
+    if (reactionWait <= 0f) reactionWait = 0.25f;
+
+    yield return new WaitForSeconds(reactionWait);
+
+    // ? теперь можно завершать заказ и уводить клиента (и продвинуть очередь)
+    bool orderOk = (resultMood == CustomerMood.Happy); // временно (neutral подключим позже)
+    customerManager?.CompleteActiveCustomer(orderOk);
     }
 
 

@@ -80,6 +80,8 @@ public class Customer : MonoBehaviour
 
     private int speedParamHash;
 
+    public float LastReactionDuration { get; private set; }
+
     private void Awake()
     {
         if (animator == null)
@@ -421,6 +423,8 @@ public class Customer : MonoBehaviour
         }
 
         // ?? SFX реакции
+        LastReactionDuration = 0f;
+
         if (reactionAudioSource != null)
         {
             AudioClip clip =
@@ -431,8 +435,10 @@ public class Customer : MonoBehaviour
 
             if (clip != null)
             {
-                reactionAudioSource.Stop(); // чтобы не накладывалось
+                reactionAudioSource.Stop();
                 reactionAudioSource.PlayOneShot(clip, reactionVolume);
+
+                LastReactionDuration = clip.length; // ? вот это главное
             }
         }
     }
