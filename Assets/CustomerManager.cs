@@ -92,6 +92,32 @@ public class CustomerManager : MonoBehaviour
         }
     }
 
+    public void ClearAllCustomers()
+    {
+        // Удаляем активного клиента у кассы
+        if (ActiveCustomer != null)
+        {
+            Destroy(ActiveCustomer.gameObject);
+            ActiveCustomer = null;
+        }
+
+        // Удаляем очередь
+        for (int i = 0; i < queue.Count; i++)
+        {
+            if (queue[i] != null)
+                Destroy(queue[i].gameObject);
+        }
+
+        queue.Clear();
+
+        // (опционально, но полезно) сброс локальных таймеров
+        spawnTimer = spawnInterval;
+        panicTimer = 0f;
+
+        // дергаем событие, чтобы UI/логика знали, что активного клиента больше нет
+        OnActiveCustomerLeft?.Invoke();
+    }
+
     private System.Collections.IEnumerator PanicAfterDelay(Customer c, float delay)
     {
         if (c == null) yield break;

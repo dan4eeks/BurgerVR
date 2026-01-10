@@ -30,6 +30,8 @@ public class OrderManager : MonoBehaviour
     private bool orderActive = false;
     private float cookTimer = 0f;
 
+    public event Action<Customer, CustomerMood> OnOrderEvaluated;
+
     private enum OrderGrade
     {
         Fail,
@@ -94,7 +96,9 @@ public class OrderManager : MonoBehaviour
 
         yield return new WaitForSeconds(reactionWait);
 
-        // 4?? ?? ÊËÈÅÍÒ ÓÕÎÄÈÒ (Î×ÅĞÅÄÜ ÄÂÈÃÀÅÒÑß)
+        Customer servedCustomer = customerManager != null ? customerManager.ActiveCustomer : null;
+        OnOrderEvaluated?.Invoke(servedCustomer, resultMood);
+
         bool orderOk = (resultMood != CustomerMood.Angry);
         customerManager?.CompleteActiveCustomer(orderOk);
     }

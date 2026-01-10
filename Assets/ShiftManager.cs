@@ -8,13 +8,14 @@ public class ShiftManager : MonoBehaviour
     [Header("Links")]
     [SerializeField] private CustomerManager customerManager;
     [SerializeField] private OrderManager orderManager;
+    [SerializeField] private WinnerScreen winnerScreen;
 
     [Header("Optional UI (can be null)")]
     [SerializeField] private TMP_Text shiftText;
     [SerializeField] private TMP_Text statusText;
 
     [Header("Shift Rules")]
-    [SerializeField] private int targetShifts = 10;
+    [SerializeField] private int targetShifts = 7;
     [SerializeField] private float shiftDurationSeconds = 7f * 60f; // 7 minutes
     [SerializeField] private float betweenShiftPauseSeconds = 3f;
 
@@ -28,8 +29,9 @@ public class ShiftManager : MonoBehaviour
     [SerializeField] private int baseClients = 3;
     [SerializeField] private int clientsStepPerDay = 1;
 
-    private int currentTargetClients;
-    private int clientsServedThisShift;
+    private int currentTargetClients = 0;
+    private int clientsServedThisShift = 0;
+    public static int StartDay = 1;
 
     private void StartShiftInternal(int targetClients)
     {
@@ -41,8 +43,9 @@ public class ShiftManager : MonoBehaviour
 
         shiftRunning = true;
 
-        if (customerManager != null)
-            customerManager.SetSpawningEnabled(true);
+        isTransitioning = false;
+
+        customerManager?.SetSpawningEnabled(true);
     }
 
 
@@ -55,6 +58,7 @@ public class ShiftManager : MonoBehaviour
     private int currentShift = 1;
     private float shiftTimer = 0f;
     private bool shiftRunning = false;
+    private bool isTransitioning = false;
 
     private int smokeBeepsThisShift = 0;
 
@@ -67,22 +71,28 @@ public class ShiftManager : MonoBehaviour
     private void OnEnable()
     {
         PattyCookable.OnSmokeAlarmBeepGlobal += OnSmokeBeep;
+
+        if (orderManager != null)
+            orderManager.OnOrderEvaluated += OnOrderEvaluated;
     }
 
     private void OnDisable()
     {
         PattyCookable.OnSmokeAlarmBeepGlobal -= OnSmokeBeep;
+
+        if (orderManager != null)
+            orderManager.OnOrderEvaluated -= OnOrderEvaluated;
     }
 
     private void Start()
     {
+        currentShift = StartDay;
         StartCoroutine(StartDayIntroAndStartShift());
     }
 
+
     private void Update()
     {
-        if (!shiftRunning) return;
-
         shiftTimer += Time.deltaTime;
         float left = Mathf.Max(0f, shiftDurationSeconds - shiftTimer);
 
@@ -93,9 +103,53 @@ public class ShiftManager : MonoBehaviour
         // ѕроверка конца смены
         if (shiftTimer >= shiftDurationSeconds)
         {
-            EndShiftSuccess();
+            StartCoroutine(EndShiftSuccessRoutine());
         }
     }
+
+    private IEnumerator EndShiftSuccessRoutine()
+    {
+        shiftRunning = false;
+
+        if (customerManager != null)
+            customerManager.SetSpawningEnabled(false);
+
+        // Ёкран У—мена пройденаФ
+        if (winnerScreen != null)
+            yield return winnerScreen.PlayShiftCleared(currentShift, targetShifts);
+        else
+            yield return new WaitForSeconds(2f);
+
+        // ≈сли это была последн€€ смена Ч финальна€ победа и рестарт
+        if (currentShift >= targetShifts)
+        {
+            // финальна€ победа
+            if (winnerScreen != null)
+                yield return winnerScreen.PlayFinalVictory();
+
+            // полный рестарт игры
+            StartDay = 1;
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            yield break;
+        }
+        else
+        {
+            // обычна€ победа смены
+            if (winnerScreen != null)
+                yield return winnerScreen.PlayShiftCleared(currentShift, targetShifts);
+
+            // следующий день
+            StartDay = currentShift + 1;
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            yield break;
+        }
+
+        // »наче Ч следующий день
+        currentShift++;
+        isTransitioning = false;
+        yield return StartDayIntroAndStartShift();
+    }
+
 
     private void OnSmokeBeep()
     {
@@ -179,7 +233,34 @@ public class ShiftManager : MonoBehaviour
             yield return new WaitForSeconds(2f);
 
         // ¬ј∆Ќќ: полностью сбросить мир (гор€щие котлеты, клиент у кассы, паника и т.п.)
+        StartDay = 1;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    private void OnOrderEvaluated(Customer customer, CustomerMood mood)
+    {
+        if (!shiftRunning || isTransitioning) return;
+
+        // Game Over: клиент недоволен (кроме alwaysAngry)
+        if (mood == CustomerMood.Angry && customer != null && !customer.alwaysAngry)
+        {
+            FailRun(" лиент недоволен");
+            return;
+        }
+
+        // —читаем клиента как "обслуженного", если заказ Ќ≈ angry
+        // (neutral/happy засчитываем)
+        if (mood != CustomerMood.Angry)
+        {
+            clientsServedThisShift++;
+
+            // ≈сли достигли цели Ч заканчиваем смену
+            if (clientsServedThisShift >= currentTargetClients)
+            {
+                isTransitioning = true;
+                StartCoroutine(EndShiftSuccessRoutine());
+            }
+        }
     }
 
     private IEnumerator StartDayIntroAndStartShift()
