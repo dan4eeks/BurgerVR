@@ -192,29 +192,44 @@ public class ShiftManager : MonoBehaviour
         // Game Over: клиент недоволен (кроме alwaysAngry)
         if (mood == CustomerMood.Angry)
         {
-            if (customer == null || !customer.alwaysAngry)
+            if (customer != null && customer.alwaysAngry)
             {
-                FailRun("Клиент недоволен");
+                // ? "вечно злой" — засчитываем как обслуженного (иначе смена может не завершиться)
+                CountServedOnce(customer);
+                TryFinishShift();
                 return;
             }
+
+            // обычный клиент — это провал
+            FailRun("Клиент недоволен");
+            return;
         }
 
+        // Засчитываем как обслуженного (Happy/Neutral)
+        if (customer != null)
+            CountServedOnce(customer);
+
+        TryFinishShift();
+    }
+
+    private void CountServedOnce(Customer customer)
+    {
         // засчитываем 1 раз конкретного клиента
-        if (customer != null && !countedCustomers.Add(customer))
+        if (!countedCustomers.Add(customer))
             return;
 
-        // Засчитываем как "обслужено", если не Angry
-        if (mood != CustomerMood.Angry)
-        {
-            clientsServedThisShift++;
+        clientsServedThisShift++;
+    }
 
-            if (clientsServedThisShift >= currentTargetClients)
-            {
-                isTransitioning = true;
-                StartCoroutine(EndShiftSuccessRoutine());
-            }
+    private void TryFinishShift()
+    {
+        if (clientsServedThisShift >= currentTargetClients)
+        {
+            isTransitioning = true;
+            StartCoroutine(EndShiftSuccessRoutine());
         }
     }
+
 
     private IEnumerator EndShiftSuccessRoutine()
     {

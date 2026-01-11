@@ -177,7 +177,7 @@ public class OrderManager : MonoBehaviour
         {
             resultMood = CustomerMood.Angry;
         }
-        else if (points >= 10)
+        else if (points >= 9)
         {
             resultMood = CustomerMood.Angry;
         }
@@ -411,6 +411,46 @@ public class OrderManager : MonoBehaviour
             int missPoints = misses * 3;
             points += missPoints;
             report.AppendLine($"+{missPoints} ошибки в рецепте ({misses}?3)");
+        }
+
+        // === 3.5) ќЅя«ј“≈Ћ№Ќџ≈ ЁЋ≈ћ≈Ќ“џ Ѕ”–√≈–ј (+10 за каждый промах) ===
+        int plateCount2 = plate.Stack != null ? plate.Stack.Count : 0;
+
+        // нижн€€ булка должна быть первым элементом
+        bool hasBottomBun = plateCount2 > 0 && plate.Stack[0] == IngredientType.BunBottom;
+        if (!hasBottomBun)
+        {
+            points += 10;
+            report.AppendLine("+10 нет нижней булки");
+        }
+
+        // верхн€€ булка должна быть последним элементом
+        bool hasTopBun = plateCount2 > 0 && plate.Stack[plateCount2 - 1] == IngredientType.BunTop;
+        if (!hasTopBun)
+        {
+            points += 10;
+            report.AppendLine("+10 нет верхней булки");
+        }
+
+        // жарена€ котлета: должна существовать хот€ бы 1 котлета и она должна быть Cooked
+        bool hasCookedPatty = false;
+
+        if (plate.PattyStates != null)
+        {
+            for (int i = 0; i < plate.PattyStates.Count; i++)
+            {
+                if (plate.PattyStates[i] == PattyCookState.Cooked)
+                {
+                    hasCookedPatty = true;
+                    break;
+                }
+            }
+        }
+
+        if (!hasCookedPatty)
+        {
+            points += 10;
+            report.AppendLine("+10 нет жареной котлеты");
         }
 
         // === »“ќ√ ===

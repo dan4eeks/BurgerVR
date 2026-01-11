@@ -6,13 +6,13 @@ public class Customer : MonoBehaviour
     public CustomerMood mood = CustomerMood.Happy;
     [SerializeField] private CustomerMoodIcon moodIcon;
 
-    [Tooltip("если true - клиент всегда злой (пока НЕ убегает панически)")]
+    [Tooltip(" true -    (   )")]
     public bool alwaysAngry = false;
 
     [Header("Timing (seconds)")]
     public float happyDuration = 60f;
     public float neutralDuration = 60f;
-    public float angryDuration = 40f; // сколько злой ДО ухода (с учётом mult)
+    public float angryDuration = 40f; //     (  mult)
 
     [Header("Order Reaction")]
     public CustomerReactionState reactionState = CustomerReactionState.None;
@@ -30,7 +30,7 @@ public class Customer : MonoBehaviour
     [Header("Animator")]
     [SerializeField] private Animator animator;
     [SerializeField] private string speedParamName = "Speed";
-    [Tooltip("Если слишком рано считает что 'стоит' — уменьши. Если дёргается — увеличь.")]
+    [Tooltip("     ''  .    .")]
     [SerializeField] private float stopDistance = 0.02f;
 
     [Header("Order Reaction Anim")]
@@ -53,13 +53,13 @@ public class Customer : MonoBehaviour
     [SerializeField] private float runSpeed = 7.5f;
 
     [Header("Cashier angry leave delay")]
-    [SerializeField] private float cashierAngryLeaveDelay = 10f; // сколько стоит злой у кассы, прежде чем уйти
+    [SerializeField] private float cashierAngryLeaveDelay = 10f; //     ,   
 
     public float rotateSpeed = 720f;
     [SerializeField] private float faceTargetRotateSpeed = 720f;
 
     [Header("Look at player when arrived at cashier")]
-    [SerializeField] private Transform playerLookTarget; // обычно XR Camera
+    [SerializeField] private Transform playerLookTarget; //  XR Camera
 
     private float moodTimer = 0f;
     private bool isLeaving = false;
@@ -70,7 +70,7 @@ public class Customer : MonoBehaviour
     public bool IsReactingToOrder => isReactingToOrder;
 
     private float currentSpeed;
-    private int queueIndex = -1; // 0 = у кассы, 1+ = очередь
+    private int queueIndex = -1; // 0 =  , 1+ = 
 
     private Transform targetPoint;
     private Transform exitPoint;
@@ -89,7 +89,7 @@ public class Customer : MonoBehaviour
 
         speedParamHash = Animator.StringToHash(speedParamName);
 
-        // Важно: чтобы анимации обновлялись даже когда персонаж "не видим" камерой (VR + bounds)
+        // :       " "  (VR + bounds)
         if (animator != null)
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
     }
@@ -129,7 +129,7 @@ public class Customer : MonoBehaviour
         {
             moodTimer = 0f;
 
-            // у кассы снова happy (если не alwaysAngry и не паника)
+            //    happy (  alwaysAngry   )
             if (!alwaysAngry && !isPanicRunning)
                 mood = CustomerMood.Happy;
 
@@ -152,7 +152,7 @@ public class Customer : MonoBehaviour
         isPanicRunning = false;
         isPanicking = false;
 
-        // обычный уход — шагом
+        //    
         currentSpeed = walkSpeed;
 
         cashierArrivedSent = true;
@@ -161,7 +161,7 @@ public class Customer : MonoBehaviour
 
 
     /// <summary>
-    /// Панический побег => включаем Scared ТОЛЬКО тут
+    ///   =>  Scared  
     /// </summary>
     public void PanicRunToExit()
     {
@@ -171,7 +171,7 @@ public class Customer : MonoBehaviour
         isPanicRunning = true;
         isPanicking = true;
 
-        // ?? СРАЗУ БЕЖИМ
+        // ??  
         currentSpeed = runSpeed;
 
         mood = CustomerMood.Scared;
@@ -192,7 +192,7 @@ public class Customer : MonoBehaviour
 
     mood = CustomerMood.Angry;
 
-    // ? ВАЖНО: иначе может уйти мгновенно, если timer уже большой
+    // ? :    ,  timer  
     moodTimer = 0f;
 
     ApplyMoodVisual();
@@ -204,7 +204,7 @@ public class Customer : MonoBehaviour
         MoveTowardsTarget();
         UpdateAnimatorSpeed();
 
-        // дошёл до кассы
+        //   
         if (!isLeaving && queueIndex == 0 && targetPoint != null && !cashierArrivedSent)
         {
             Vector3 a = transform.position; a.y = 0f;
@@ -231,7 +231,7 @@ public class Customer : MonoBehaviour
         }
 
 
-        // дошёл до выхода
+        //   
         if (isLeaving && targetPoint != null && Vector3.Distance(transform.position, targetPoint.position) < 0.15f)
         {
             manager?.OnCustomerExited(this);
@@ -268,7 +268,7 @@ public class Customer : MonoBehaviour
             Vector3 to = targetPoint.position - transform.position;
             to.y = 0f;
 
-            // пока реально идём/бежим — Speed > 0
+            //   /  Speed > 0
             if (to.magnitude >= stopDistance)
                 value = currentSpeed;
         }
@@ -288,10 +288,10 @@ public class Customer : MonoBehaviour
         float neutralT = neutralDuration;
         float angryT = angryDuration;
 
-        // Вечно злой: он всегда Angry и просто уходит через angryT
+        //  :   Angry     angryT
         if (alwaysAngry)
         {
-            // Всегда злой по виду, но ждёт полный цикл
+            //    ,    
             if (mood != CustomerMood.Angry)
             {
                 mood = CustomerMood.Angry;
@@ -309,7 +309,7 @@ public class Customer : MonoBehaviour
         }
 
 
-        // Обычный клиент: Happy -> Neutral -> Angry -> уход
+        //  : Happy -> Neutral -> Angry -> 
         if (mood == CustomerMood.Happy && moodTimer >= happyT)
         {
             mood = CustomerMood.Neutral;
@@ -375,14 +375,14 @@ public class Customer : MonoBehaviour
             transform.rotation = Quaternion.LookRotation(finalDir.normalized, Vector3.up);
     }
 
-    // вызывается из CustomerManager.AcceptNextCustomer()
+    //   CustomerManager.AcceptNextCustomer()
     public void OnOrderAccepted() { }
 
-    // вызывается из CustomerOrderUI (после диктовки)
+    //   CustomerOrderUI ( )
     public void ResetPatienceAfterDictation()
     {
-        // В очереди можно сбрасывать (если хочешь),
-        // но у кассы это сбивает фазу ожидания.
+        //     ( ),
+        //       .
         if (queueIndex >= 1)
             moodTimer = 0f;
     }
@@ -409,7 +409,7 @@ public class Customer : MonoBehaviour
         mood = resultMood;
         ApplyMoodVisual();
 
-        // Анимация (если ты уже добавил триггеры)
+        //  (    )
         if (animator != null)
         {
             string trig =
@@ -422,7 +422,7 @@ public class Customer : MonoBehaviour
                 animator.SetTrigger(trig);
         }
 
-        // ?? SFX реакции
+        // ?? SFX 
         LastReactionDuration = 0f;
 
         if (reactionAudioSource != null)
@@ -438,8 +438,37 @@ public class Customer : MonoBehaviour
                 reactionAudioSource.Stop();
                 reactionAudioSource.PlayOneShot(clip, reactionVolume);
 
-                LastReactionDuration = clip.length; // ? вот это главное
+                LastReactionDuration = clip.length; // ?   
             }
         }
     }
+
+    // Called by CustomerManager when this customer moved closer to cashier by one position.
+    public void OnAdvancedInQueue()
+    {
+        if (alwaysAngry) return;
+        if (isPanicRunning) return;
+
+        // If the customer is currently reacting or leaving, don't change mood.
+        if (isLeaving || isReactingToOrder) return;
+
+        switch (mood)
+        {
+            case CustomerMood.Angry:
+                mood = CustomerMood.Neutral;
+                break;
+            case CustomerMood.Neutral:
+                mood = CustomerMood.Happy;
+                break;
+            case CustomerMood.Happy:
+                // stay happy
+                break;
+            default:
+                // Scared or others: leave as is
+                break;
+        }
+
+        ApplyMoodVisual();
+    }
+
 }
