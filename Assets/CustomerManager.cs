@@ -33,6 +33,9 @@ public class CustomerManager : MonoBehaviour
     [SerializeField] private float panicDelayMin = 0f;
     [SerializeField] private float panicDelayMax = 1.5f;
 
+    public event Action<Customer> OnCustomerGaveUpWaiting; // ушёл, не дождавшись
+    public event Action<Customer> OnCustomerExitedEvent;   // реально вышел (уничтожился)
+
     private readonly HashSet<Customer> evacuating = new HashSet<Customer>();
     public bool IsEvacuationInProgress => evacuating.Count > 0;
 
@@ -293,21 +296,23 @@ public class CustomerManager : MonoBehaviour
 
     public void OnCustomerLeftAngry(Customer c)
     {
+        OnCustomerGaveUpWaiting?.Invoke(c);
+
         if (ActiveCustomer == c)
             ActiveCustomer = null;
 
         queue.Remove(c);
         ReassignQueueTargets();
 
-        // ВАЖНО: UI всегда в "ожидание", а кнопку покажем только когда новый реально дошёл
         OnActiveCustomerLeft?.Invoke();
     }
 
+
     public void OnCustomerExited(Customer c)
     {
-        if (c == null) return;
-        evacuating.Remove(c);
+        OnCustomerExitedEvent?.Invoke(c);
     }
+
 
     // =========================
     // PANIC FROM SMOKE ALARM

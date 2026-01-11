@@ -84,6 +84,9 @@ public class ShiftManager : MonoBehaviour
 
         if (orderManager != null)
             orderManager.OnCustomerReactionFinished += OnCustomerReactionFinished;
+        
+        if (customerManager != null)
+            customerManager.OnCustomerGaveUpWaiting += OnCustomerGaveUpWaiting;
     }
 
     private void OnDisable()
@@ -92,7 +95,48 @@ public class ShiftManager : MonoBehaviour
 
         if (orderManager != null)
             orderManager.OnCustomerReactionFinished += OnCustomerReactionFinished;
+
+        if (customerManager != null)
+            customerManager.OnCustomerGaveUpWaiting -= OnCustomerGaveUpWaiting;
     }
+
+    private void OnCustomerGaveUpWaiting(Customer customer)
+    {
+        if (!shiftRunning || isTransitioning) return;
+
+        // чтобы не стартовало дважды
+        isTransitioning = true;
+
+        StartCoroutine(GameOverAfterCustomerLeavesRoutine(customer, "Клиент ушёл не дождавшись заказа"));
+    }
+
+    private IEnumerator GameOverAfterCustomerLeavesRoutine(Customer leavingCustomer, string reason)
+    {
+        shiftRunning = false;
+
+        // стопаем новых клиентов
+        customerManager?.SetSpawningEnabled(false);
+
+        // ждём, пока этот конкретный клиент реально выйдет (Destroy -> ссылка станет null)
+        float timeout = 12f;
+        float t = 0f;
+
+        while (leavingCustomer != null && t < timeout)
+        {
+            t += Time.deltaTime;
+            yield return null;
+        }
+
+        // показываем Game Over
+        if (gameOverScreen != null)
+            yield return gameOverScreen.Play(reason);
+        else
+            yield return new WaitForSeconds(2f);
+
+        StartDay = 1;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
 
     private void Start()
     {
