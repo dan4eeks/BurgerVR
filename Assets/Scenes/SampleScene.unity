@@ -1207,45 +1207,43 @@ MonoBehaviour:
   customerManager: {fileID: 1868602901}
   orderManager: {fileID: 1144429963}
   winnerScreen: {fileID: 0}
+  introScreen: {fileID: 1799309505}
+  gameOverScreen: {fileID: 83840790}
   shiftText: {fileID: 0}
   statusText: {fileID: 0}
   targetShifts: 3
-  shiftDurationSeconds: 420
-  betweenShiftPauseSeconds: 3
-  introScreen: {fileID: 1799309505}
-  gameOverScreen: {fileID: 83840790}
   smokeBeepsToFail: 1
   days:
   - day: 1
     targetCustomers: 3
+    spawnInterval: 25
     recipeIngredientsTotal: 3
     happyTime: 60
     neutralTime: 60
     angryTime: 40
     pattyCookTime: 22
-    spawnInterval: 25
     ingredientSpawnInterval: 0
-    ingredientMaxAlive: 0
+    ingredientMaxAlive: 3
   - day: 2
-    targetCustomers: 4
-    recipeIngredientsTotal: 3
-    happyTime: 54
-    neutralTime: 54
-    angryTime: 35
-    pattyCookTime: 21
-    spawnInterval: 23
-    ingredientSpawnInterval: 0
-    ingredientMaxAlive: 0
-  - day: 3
-    targetCustomers: 5
+    targetCustomers: 6
+    spawnInterval: 20
     recipeIngredientsTotal: 4
-    happyTime: 48
-    neutralTime: 48
+    happyTime: 45
+    neutralTime: 45
     angryTime: 30
-    pattyCookTime: 19
-    spawnInterval: 21
+    pattyCookTime: 15
     ingredientSpawnInterval: 0
-    ingredientMaxAlive: 0
+    ingredientMaxAlive: 4
+  - day: 3
+    targetCustomers: 9
+    spawnInterval: 15
+    recipeIngredientsTotal: 6
+    happyTime: 30
+    neutralTime: 30
+    angryTime: 20
+    pattyCookTime: 10
+    ingredientSpawnInterval: 0
+    ingredientMaxAlive: 5
 --- !u!4 &259128907
 Transform:
   m_ObjectHideFlags: 0
