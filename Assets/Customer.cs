@@ -470,5 +470,4 @@ public class Customer : MonoBehaviour
 
         ApplyMoodVisual();
     }
-
 }

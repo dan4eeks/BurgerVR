@@ -25,7 +25,7 @@ public class WinnerScreen : MonoBehaviour
 
     public IEnumerator PlayFinalVictory()
     {
-        if (titleText != null) titleText.text = "ПОБЕДА ??";
+        if (titleText != null) titleText.text = "ПОБЕДА ????";
         if (progressText != null) progressText.text = "Вы пережили все смены!";
 
         yield return Fade(0f, 1f);

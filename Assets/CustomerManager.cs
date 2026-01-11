@@ -250,6 +250,9 @@ public class CustomerManager : MonoBehaviour
     {
         if (ActiveCustomer == null) return;
 
+        // ? снимок очереди ДО изменений
+        var oldQueue = new System.Collections.Generic.List<Customer>(queue);
+
         Customer done = ActiveCustomer;
         ActiveCustomer = null;
 
@@ -257,15 +260,36 @@ public class CustomerManager : MonoBehaviour
 
         if (!orderOk && done != null)
             done.ForceAngry();
-        
+
         done?.Leave();
 
+        // ? переназначили позиции
         ReassignQueueTargets();
+
+        // ? после переназначения — поднимаем настроение тем, кто стал ближе к кассе
+        BoostMoodForCustomersWhoMovedForward(oldQueue);
 
         // UI -> ожидание до следующего "дошёл к кассе"
         OnActiveCustomerLeft?.Invoke();
-
     }
+
+    private void BoostMoodForCustomersWhoMovedForward(List<Customer> oldQueue)
+    {
+        for (int newIndex = 0; newIndex < queue.Count; newIndex++)
+        {
+            Customer c = queue[newIndex];
+            if (c == null) continue;
+
+            int oldIndex = oldQueue.IndexOf(c);
+            if (oldIndex < 0) continue;
+
+            int moved = oldIndex - newIndex;
+            if (moved <= 0) continue;
+
+            for (int i = 0; i < moved; i++)
+                c.OnAdvancedInQueue(); // ? ВОТ ОН
+        }
+    }    
 
     public void OnCustomerLeftAngry(Customer c)
     {
@@ -344,4 +368,5 @@ public class CustomerManager : MonoBehaviour
         // финальная очистка
         evacuating.RemoveWhere(x => x == null);
     }
+
 }
