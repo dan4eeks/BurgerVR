@@ -182,8 +182,35 @@ public class ShiftManager : MonoBehaviour
             statusText.text = $"“–≈¬ќ√ј! ({smokeBeepsThisShift}/{smokeBeepsToFail})";
 
         if (smokeBeepsThisShift >= smokeBeepsToFail)
-            FailRun("ѕаника из-за дыма");
+        {
+            // вместо FailRun Ч специальный сценарий
+            if (!gameObject.activeInHierarchy) return;
+            StartCoroutine(FailAfterEvacuationRoutine("ѕаника из-за дыма"));
+        }
     }
+
+    private IEnumerator FailAfterEvacuationRoutine(string reason)
+    {
+        shiftRunning = false;
+        isTransitioning = true;
+
+        // стопаем спавн
+        customerManager?.SetSpawningEnabled(false);
+
+        // ? ждЄм, пока все клиенты добегут и уничтожатс€
+        if (customerManager != null)
+            yield return customerManager.WaitForEvacuation(12f);
+
+        // показываем Game Over
+        if (gameOverScreen != null)
+            yield return gameOverScreen.Play(reason);
+        else
+            yield return new WaitForSeconds(2f);
+
+        StartDay = 1;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
 
     private void OnCustomerReactionFinished(Customer customer, CustomerMood mood)
     {

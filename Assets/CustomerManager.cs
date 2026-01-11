@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Collections;
 
 public class CustomerManager : MonoBehaviour
 {
@@ -31,6 +32,9 @@ public class CustomerManager : MonoBehaviour
     [Header("Panic delay (seconds)")]
     [SerializeField] private float panicDelayMin = 0f;
     [SerializeField] private float panicDelayMax = 1.5f;
+
+    private readonly HashSet<Customer> evacuating = new HashSet<Customer>();
+    public bool IsEvacuationInProgress => evacuating.Count > 0;
 
     private readonly List<Customer> queue = new List<Customer>();
     private float spawnTimer;
@@ -277,42 +281,67 @@ public class CustomerManager : MonoBehaviour
 
     public void OnCustomerExited(Customer c)
     {
-        // optional: оставить для совместимости/статистики
+        if (c == null) return;
+        evacuating.Remove(c);
     }
 
     // =========================
     // PANIC FROM SMOKE ALARM
     // =========================
-    private void OnSmokeAlarmBeep()
-{
-    if (panicTimer > 0f) return;
-    panicTimer = panicCooldown;
-
-    // Бежать некому, если 0-1 человек
-    if (queue.Count <= 1) return;
-
-    // Все, кто НЕ у кассы (индексы 1..), начинают паниковать через рандомную задержку
-    for (int i = queue.Count - 1; i >= 1; i--)
+    void OnSmokeAlarmBeep()
     {
-        Customer c = queue[i];
-        if (c == null)
+        if (panicTimer > 0f) return;
+        panicTimer = panicCooldown;
+
+        // Собираем всех текущих клиентов (включая кассу)
+        List<Customer> toEvacuate = new List<Customer>();
+
+        if (ActiveCustomer != null)
+            toEvacuate.Add(ActiveCustomer);
+
+        for (int i = 0; i < queue.Count; i++)
         {
-            queue.RemoveAt(i);
-            continue;
+            var c = queue[i];
+            if (c != null && !toEvacuate.Contains(c))
+                toEvacuate.Add(c);
         }
 
-        // ВАЖНО: убираем из очереди сразу, чтобы очередь сдвинулась,
-        // но сам клиент начнёт бежать через delay
-        queue.RemoveAt(i);
+        // Очищаем очередь и активного
+        queue.Clear();
+        ActiveCustomer = null;
 
-        float delay = UnityEngine.Random.Range(panicDelayMin, panicDelayMax);
-        StartCoroutine(PanicAfterDelay(c, delay));
+        // Сразу говорим UI/логике: активного больше нет
+        OnActiveCustomerLeft?.Invoke();
+
+        // Запускаем эвакуацию
+        for (int i = 0; i < toEvacuate.Count; i++)
+        {
+            Customer c = toEvacuate[i];
+            if (c == null) continue;
+
+            // помечаем, что ждём его ухода
+            evacuating.Add(c);
+
+            // можно дать небольшую рандомную задержку, чтобы смотрелось естественно
+            float delay = UnityEngine.Random.Range(panicDelayMin, panicDelayMax);
+            StartCoroutine(PanicAfterDelay(c, delay));
+        }
     }
 
-    ReassignQueueTargets();
+    public IEnumerator WaitForEvacuation(float timeoutSeconds = 10f)
+    {
+        float t = 0f;
 
-    if (queue.Count == 0)
-        OnActiveCustomerLeft?.Invoke();
-}
+        while (evacuating.Count > 0 && t < timeoutSeconds)
+        {
+            // чистим случайные null (если кого-то уничтожили иначе)
+            evacuating.RemoveWhere(x => x == null);
 
+            t += Time.deltaTime;
+            yield return null;
+        }
+
+        // финальная очистка
+        evacuating.RemoveWhere(x => x == null);
+    }
 }
