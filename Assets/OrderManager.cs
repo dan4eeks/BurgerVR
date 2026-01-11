@@ -33,28 +33,20 @@ public class OrderManager : MonoBehaviour
     [SerializeField] private AudioSource reactionAudioSource;
     [SerializeField] private AudioClip drumrollClip;
 
+    public void ApplyDaySettings(float happySeconds, float neutralSeconds, float angrySeconds, int totalIngredients)
+    {
+        // тайминги (если у тебя уже есть maxCookTime — оставь как тебе надо)
+        maxCookTime = happySeconds + neutralSeconds + angrySeconds;
+
+        recipeTotalIngredients = Mathf.Clamp(totalIngredients, 3, 12);
+    }
+
     private readonly List<IngredientType> currentRecipe = new List<IngredientType>();
     
     public event Action<Customer, CustomerMood> OnOrderEvaluated;
 
     private bool orderActive = false;
     private float cookTimer = 0f;
-
-
-    public void ApplyDaySettings(
-        float happySeconds,
-        float neutralSeconds,
-        float angrySeconds,
-        int totalIngredients)
-    {
-        happyWindow = Mathf.Max(1f, happySeconds);
-        neutralWindow = Mathf.Max(0f, neutralSeconds);
-        angryWindow = Mathf.Max(0f, angrySeconds);
-
-        maxCookTime = happyWindow + neutralWindow + angryWindow;
-
-        recipeTotalIngredients = Mathf.Clamp(totalIngredients, 3, 12);
-    }
 
     private enum OrderGrade
     {
@@ -302,7 +294,6 @@ public class OrderManager : MonoBehaviour
     {
         currentRecipe.Clear();
 
-        // Минимум 3: BunBottom + Patty + BunTop
         int total = Mathf.Max(3, recipeTotalIngredients);
         int extrasNeeded = total - 3;
 
@@ -321,6 +312,7 @@ public class OrderManager : MonoBehaviour
             extras.Add(v);
         }
 
+        // если enum пустой (нет сыра/овощей) — будет всегда 3, и это нормально
         for (int i = 0; i < extrasNeeded; i++)
         {
             if (extras.Count == 0) break;
@@ -329,7 +321,6 @@ public class OrderManager : MonoBehaviour
 
         currentRecipe.Add(IngredientType.BunTop);
     }
-
 
     private void UpdateRecipeUI()
     {

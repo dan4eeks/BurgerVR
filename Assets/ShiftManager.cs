@@ -49,6 +49,8 @@ public class ShiftManager : MonoBehaviour
         new DaySettings{ day=3, targetCustomers=10, recipeIngredientsTotal=6, happyTime=25, neutralTime=25, angryTime=10, pattyCookTime=14, spawnInterval=13, ingredientSpawnInterval=9,  ingredientMaxAlive=5 },
     };
 
+    private readonly System.Collections.Generic.HashSet<Customer> countedCustomers = new System.Collections.Generic.HashSet<Customer>();
+
     private DaySettings GetDay(int day)
     {
         // если вышли за массив Ч берЄм последний день
@@ -64,6 +66,7 @@ public class ShiftManager : MonoBehaviour
 
     private void StartShiftInternal(int targetClients)
     {
+        countedCustomers.Clear();
         currentTargetClients = targetClients;
         clientsServedThisShift = 0;
 
@@ -240,7 +243,7 @@ public class ShiftManager : MonoBehaviour
     {
         if (!shiftRunning || isTransitioning) return;
 
-        // если клиент null Ч всЄ равно можно считать это провалом (но лучше, чтобы он не был null после фикса выше)
+        // Game Over
         if (mood == CustomerMood.Angry)
         {
             if (customer == null || !customer.alwaysAngry)
@@ -250,9 +253,14 @@ public class ShiftManager : MonoBehaviour
             }
         }
 
+        // «асчитываем клиента только 1 раз
+        if (customer != null && !countedCustomers.Add(customer))
+            return; // уже считали этого клиента
+
         if (mood != CustomerMood.Angry)
         {
             clientsServedThisShift++;
+
             if (clientsServedThisShift >= currentTargetClients)
             {
                 isTransitioning = true;
