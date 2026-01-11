@@ -1204,6 +1204,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   customerManager: {fileID: 1868602901}
   orderManager: {fileID: 1144429963}
+  winnerScreen: {fileID: 0}
   shiftText: {fileID: 0}
   statusText: {fileID: 0}
   targetShifts: 10
@@ -1214,6 +1215,63 @@ MonoBehaviour:
   smokeBeepsToFail: 1
   baseClients: 3
   clientsStepPerDay: 1
+  days:
+  - day: 1
+    targetCustomers: 3
+    recipeIngredientsTotal: 3
+    happyTime: 60
+    neutralTime: 60
+    angryTime: 40
+    pattyCookTime: 22
+    spawnInterval: 25
+  - day: 2
+    targetCustomers: 4
+    recipeIngredientsTotal: 3
+    happyTime: 54
+    neutralTime: 54
+    angryTime: 35
+    pattyCookTime: 21
+    spawnInterval: 23
+  - day: 3
+    targetCustomers: 5
+    recipeIngredientsTotal: 4
+    happyTime: 48
+    neutralTime: 48
+    angryTime: 30
+    pattyCookTime: 19
+    spawnInterval: 21
+  - day: 4
+    targetCustomers: 6
+    recipeIngredientsTotal: 4
+    happyTime: 42
+    neutralTime: 42
+    angryTime: 25
+    pattyCookTime: 18
+    spawnInterval: 19
+  - day: 5
+    targetCustomers: 7
+    recipeIngredientsTotal: 5
+    happyTime: 36
+    neutralTime: 36
+    angryTime: 20
+    pattyCookTime: 16
+    spawnInterval: 17
+  - day: 6
+    targetCustomers: 8
+    recipeIngredientsTotal: 5
+    happyTime: 30
+    neutralTime: 30
+    angryTime: 15
+    pattyCookTime: 15
+    spawnInterval: 15
+  - day: 7
+    targetCustomers: 10
+    recipeIngredientsTotal: 6
+    happyTime: 25
+    neutralTime: 25
+    angryTime: 10
+    pattyCookTime: 14
+    spawnInterval: 13
 --- !u!4 &259128907
 Transform:
   m_ObjectHideFlags: 0
@@ -4889,6 +4947,10 @@ MonoBehaviour:
   thinkingMinTime: 2
   thinkingMaxTime: 2
   maxCookTime: 160
+  happyWindow: 60
+  neutralWindow: 60
+  angryWindow: 40
+  recipeTotalIngredients: 3
   reactionAudioSource: {fileID: 260477427}
   drumrollClip: {fileID: 8300000, guid: 5ad7c436941d7b6469d48f3a53d78381, type: 3}
 --- !u!4 &1144429964
@@ -6452,6 +6514,10 @@ MonoBehaviour:
   thinkingMinTime: 3
   thinkingMaxTime: 4
   maxCookTime: 30
+  happyWindow: 60
+  neutralWindow: 60
+  angryWindow: 40
+  recipeTotalIngredients: 3
   reactionAudioSource: {fileID: 0}
   drumrollClip: {fileID: 0}
 --- !u!4 &1600719968
@@ -8753,14 +8819,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 2113548687}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3adc7ec902345a744a6dcbca2bf67536, type: 3}
+  m_Script: {fileID: 11500000, guid: 58e1d5d75300a0b4bb730efea9ea0666, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   canvasGroup: {fileID: 192705104}
   titleText: {fileID: 2038425185}
-  reasonText: {fileID: 1827428499}
+  progressText: {fileID: 1827428499}
   fadeDuration: 0.5
-  visibleDuration: 2.5
+  visibleDuration: 2
 --- !u!4 &2113548689
 Transform:
   m_ObjectHideFlags: 0

@@ -76,14 +76,16 @@ public class PattyCookable : MonoBehaviour
         {
             grillTimer += Time.deltaTime;
 
-            if (State == PattyCookState.Raw && grillTimer >= timeToCooked)
+            float cookTime = CookTimeSeconds > 0f ? CookTimeSeconds : timeToCooked;
+
+            if (State == PattyCookState.Raw && grillTimer >= cookTime)
             {
                 State = PattyCookState.Cooked;
                 ApplyVisual();
                 PlayOneShot(cookedSfx);
             }
 
-            float burntTime = timeToCooked + timeToBurntAfterCooked;
+            float burntTime = cookTime + timeToBurntAfterCooked;
             if (State == PattyCookState.Cooked && grillTimer >= burntTime)
             {
                 State = PattyCookState.Burnt;

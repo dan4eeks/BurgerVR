@@ -15,7 +15,7 @@ public class ShiftManager : MonoBehaviour
     [SerializeField] private TMP_Text statusText;
 
     [Header("Shift Rules")]
-    [SerializeField] private int targetShifts = 7;
+    [SerializeField] private int targetShifts = 3;
     [SerializeField] private float shiftDurationSeconds = 7f * 60f; // 7 minutes
     [SerializeField] private float betweenShiftPauseSeconds = 3f;
 
@@ -26,8 +26,6 @@ public class ShiftManager : MonoBehaviour
     [Tooltip("Сколько 'дымовых beep' за смену считаем провалом (паника-цепочка).")]
     [SerializeField] private int smokeBeepsToFail = 1;
 
-    [SerializeField] private int baseClients = 3;
-    [SerializeField] private int clientsStepPerDay = 1;
 
     [System.Serializable]
     public struct DaySettings
@@ -40,17 +38,15 @@ public class ShiftManager : MonoBehaviour
         public float angryTime;
         public float pattyCookTime;
         public float spawnInterval;
+        public float ingredientSpawnInterval;
+        public int ingredientMaxAlive;
     }
 
     [SerializeField] private DaySettings[] days = new DaySettings[]
     {
-        new DaySettings{ day=1, targetCustomers=3,  recipeIngredientsTotal=3, happyTime=60, neutralTime=60, angryTime=40, pattyCookTime=22, spawnInterval=25 },
-        new DaySettings{ day=2, targetCustomers=4,  recipeIngredientsTotal=4, happyTime=54, neutralTime=54, angryTime=35, pattyCookTime=21, spawnInterval=23 },
-        new DaySettings{ day=3, targetCustomers=5,  recipeIngredientsTotal=4, happyTime=48, neutralTime=48, angryTime=30, pattyCookTime=19, spawnInterval=21 },
-        new DaySettings{ day=4, targetCustomers=6,  recipeIngredientsTotal=5, happyTime=42, neutralTime=42, angryTime=25, pattyCookTime=18, spawnInterval=19 },
-        new DaySettings{ day=5, targetCustomers=7,  recipeIngredientsTotal=5, happyTime=36, neutralTime=36, angryTime=20, pattyCookTime=16, spawnInterval=17 },
-        new DaySettings{ day=6, targetCustomers=8,  recipeIngredientsTotal=6, happyTime=30, neutralTime=30, angryTime=15, pattyCookTime=15, spawnInterval=15 },
-        new DaySettings{ day=7, targetCustomers=10, recipeIngredientsTotal=6, happyTime=25, neutralTime=25, angryTime=10, pattyCookTime=14, spawnInterval=13 },
+        new DaySettings{ day=1, targetCustomers=3,  recipeIngredientsTotal=3, happyTime=60, neutralTime=60, angryTime=40, pattyCookTime=22, spawnInterval=25, ingredientSpawnInterval=20, ingredientMaxAlive=3 },
+        new DaySettings{ day=2, targetCustomers=6,  recipeIngredientsTotal=4, happyTime=43, neutralTime=43, angryTime=25, pattyCookTime=18, spawnInterval=19, ingredientSpawnInterval=14, ingredientMaxAlive=4 },
+        new DaySettings{ day=3, targetCustomers=10, recipeIngredientsTotal=6, happyTime=25, neutralTime=25, angryTime=10, pattyCookTime=14, spawnInterval=13, ingredientSpawnInterval=9,  ingredientMaxAlive=5 },
     };
 
     private DaySettings GetDay(int day)
@@ -75,18 +71,8 @@ public class ShiftManager : MonoBehaviour
         smokeBeepsThisShift = 0;
 
         shiftRunning = true;
-
         isTransitioning = false;
-
-        customerManager?.SetSpawningEnabled(true);
     }
-
-
-    private int GetTargetClientsForDay(int day)
-    {
-        return baseClients + (day - 1) * clientsStepPerDay;
-    }
-
 
     private int currentShift = 1;
     private float shiftTimer = 0f;
@@ -126,63 +112,43 @@ public class ShiftManager : MonoBehaviour
 
     private void Update()
     {
+        if (!shiftRunning || isTransitioning) return;
+
+        // (опционально) если хочешь, чтобы таймер всё равно отображался — оставь.
+        // Но завершение смены по таймеру убираем, чтобы не конфликтовало с целью N клиентов.
+
         shiftTimer += Time.deltaTime;
-        float left = Mathf.Max(0f, shiftDurationSeconds - shiftTimer);
 
-        // Обновление UI
         if (shiftText != null)
-            shiftText.text = $"Смена {currentShift}/{targetShifts} • Осталось {FormatTime(left)}";
-
-        // Проверка конца смены
-        if (shiftTimer >= shiftDurationSeconds)
-        {
-            StartCoroutine(EndShiftSuccessRoutine());
-        }
+            shiftText.text = $"День {currentShift}/{targetShifts} • Цель: {clientsServedThisShift}/{currentTargetClients}";
     }
+
 
     private IEnumerator EndShiftSuccessRoutine()
     {
         shiftRunning = false;
+        isTransitioning = true;
 
-        if (customerManager != null)
-            customerManager.SetSpawningEnabled(false);
+        customerManager?.SetSpawningEnabled(false);
 
-        // Экран “Смена пройдена”
         if (winnerScreen != null)
             yield return winnerScreen.PlayShiftCleared(currentShift, targetShifts);
         else
             yield return new WaitForSeconds(2f);
 
-        // Если это была последняя смена — финальная победа и рестарт
         if (currentShift >= targetShifts)
         {
-            // финальная победа
             if (winnerScreen != null)
                 yield return winnerScreen.PlayFinalVictory();
 
-            // полный рестарт игры
             StartDay = 1;
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             yield break;
         }
-        else
-        {
-            // обычная победа смены
-            if (winnerScreen != null)
-                yield return winnerScreen.PlayShiftCleared(currentShift, targetShifts);
 
-            // следующий день
-            StartDay = currentShift + 1;
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-            yield break;
-        }
-
-        // Иначе — следующий день
-        currentShift++;
-        isTransitioning = false;
-        yield return StartDayIntroAndStartShift();
+        StartDay = currentShift + 1;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
-
 
     private void OnSmokeBeep()
     {
@@ -274,20 +240,19 @@ public class ShiftManager : MonoBehaviour
     {
         if (!shiftRunning || isTransitioning) return;
 
-        // Game Over: клиент недоволен (кроме alwaysAngry)
-        if (mood == CustomerMood.Angry && customer != null && !customer.alwaysAngry)
+        // если клиент null — всё равно можно считать это провалом (но лучше, чтобы он не был null после фикса выше)
+        if (mood == CustomerMood.Angry)
         {
-            FailRun("Клиент недоволен");
-            return;
+            if (customer == null || !customer.alwaysAngry)
+            {
+                FailRun("Клиент недоволен");
+                return;
+            }
         }
 
-        // Считаем клиента как "обслуженного", если заказ НЕ angry
-        // (neutral/happy засчитываем)
         if (mood != CustomerMood.Angry)
         {
             clientsServedThisShift++;
-
-            // Если достигли цели — заканчиваем смену
             if (clientsServedThisShift >= currentTargetClients)
             {
                 isTransitioning = true;
@@ -298,27 +263,38 @@ public class ShiftManager : MonoBehaviour
 
     private IEnumerator StartDayIntroAndStartShift()
     {
-        int targetClients = GetTargetClientsForDay(currentShift);
-
-        // На время интро — не спавним
-        if (customerManager != null)
-            customerManager.SetSpawningEnabled(false);
-
-        if (introScreen != null)
-            yield return introScreen.Play(currentShift, targetClients);
-
         DaySettings s = GetDay(currentShift);
 
-        // 1) Настройки тайминга и размера рецепта
+        // На время интро — не спавним
+        customerManager?.SetSpawningEnabled(false);
+
+        if (introScreen != null)
+            yield return introScreen.Play(currentShift, s.targetCustomers);
+
+        // 1) Тайминги и размер рецепта
         orderManager.ApplyDaySettings(s.happyTime, s.neutralTime, s.angryTime, s.recipeIngredientsTotal);
 
-        // 2) Настройки спавна: ровно N клиентов на смену
+        // 2) Спавн клиентов: ровно N + интервал
         customerManager.ConfigureShiftSpawning(s.targetCustomers, s.spawnInterval);
 
-        // 3) Настройка жарки котлеты
+        // 3) Жарка котлеты
         PattyCookable.CookTimeSeconds = s.pattyCookTime;
 
-        StartShiftInternal(targetClients);
+        // 4) Спавн ингредиентов (ускорение по дням)
+        ApplyIngredientSpawners(s.ingredientSpawnInterval, s.ingredientMaxAlive);
+
+        // Запуск смены с правильной целью
+        StartShiftInternal(s.targetCustomers);
+    }
+
+    private void ApplyIngredientSpawners(float interval, int maxAlive)
+    {
+        interval = Mathf.Max(0.1f, interval);
+        maxAlive = Mathf.Max(1, maxAlive); // КЛЮЧЕВО: минимум 1
+
+        var spawners = FindObjectsOfType<IngredientSpawner>(true);
+        foreach (var sp in spawners)
+            sp.ApplyDaySettings(interval, maxAlive);
     }
 
     private void RestartFromBeginning()

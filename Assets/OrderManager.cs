@@ -34,6 +34,8 @@ public class OrderManager : MonoBehaviour
     [SerializeField] private AudioClip drumrollClip;
 
     private readonly List<IngredientType> currentRecipe = new List<IngredientType>();
+    
+    public event Action<Customer, CustomerMood> OnOrderEvaluated;
 
     private bool orderActive = false;
     private float cookTimer = 0f;
@@ -53,8 +55,6 @@ public class OrderManager : MonoBehaviour
 
         recipeTotalIngredients = Mathf.Clamp(totalIngredients, 3, 12);
     }
-
-    public event Action<Customer, CustomerMood> OnOrderEvaluated;
 
     private enum OrderGrade
     {
@@ -120,8 +120,7 @@ public class OrderManager : MonoBehaviour
 
         yield return new WaitForSeconds(reactionWait);
 
-        Customer servedCustomer = customerManager != null ? customerManager.ActiveCustomer : null;
-        OnOrderEvaluated?.Invoke(servedCustomer, resultMood);
+        OnOrderEvaluated?.Invoke(customer, resultMood);
 
         bool orderOk = (resultMood != CustomerMood.Angry);
         customerManager?.CompleteActiveCustomer(orderOk);
@@ -198,6 +197,8 @@ public class OrderManager : MonoBehaviour
         {
             resultMood = CustomerMood.Happy;
         }
+
+        OnOrderEvaluated?.Invoke(customer, resultMood);
 
         // === TIME-BASED MOOD (твоя логика 60/60/40 и т.д.) ===
         CustomerMood timeMood;
