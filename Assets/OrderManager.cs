@@ -33,6 +33,8 @@ public class OrderManager : MonoBehaviour
     [SerializeField] private AudioSource reactionAudioSource;
     [SerializeField] private AudioClip drumrollClip;
 
+    public event System.Action<Customer, CustomerMood> OnCustomerReactionFinished;
+
     public void ApplyDaySettings(float happySeconds, float neutralSeconds, float angrySeconds, int totalIngredients)
     {
         // тайминги (если у теб€ уже есть maxCookTime Ч оставь как тебе надо)
@@ -111,6 +113,8 @@ public class OrderManager : MonoBehaviour
             reactionWait = 0.25f;
 
         yield return new WaitForSeconds(reactionWait);
+        // ? –еакци€ (звук/анимаци€) закончилась Ч теперь можно показывать победу/переход/гейм овер
+        OnCustomerReactionFinished?.Invoke(customer, resultMood);
 
         OnOrderEvaluated?.Invoke(customer, resultMood);
 

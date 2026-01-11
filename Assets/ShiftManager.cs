@@ -83,7 +83,7 @@ public class ShiftManager : MonoBehaviour
         PattyCookable.OnSmokeAlarmBeepGlobal += OnSmokeBeep;
 
         if (orderManager != null)
-            orderManager.OnOrderEvaluated += OnOrderEvaluated;
+            orderManager.OnCustomerReactionFinished += OnCustomerReactionFinished;
     }
 
     private void OnDisable()
@@ -91,7 +91,7 @@ public class ShiftManager : MonoBehaviour
         PattyCookable.OnSmokeAlarmBeepGlobal -= OnSmokeBeep;
 
         if (orderManager != null)
-            orderManager.OnOrderEvaluated -= OnOrderEvaluated;
+            orderManager.OnCustomerReactionFinished += OnCustomerReactionFinished;
     }
 
     private void Start()
@@ -185,27 +185,27 @@ public class ShiftManager : MonoBehaviour
             FailRun("ѕаника из-за дыма");
     }
 
-    private void OnOrderEvaluated(Customer customer, CustomerMood mood)
+    private void OnCustomerReactionFinished(Customer customer, CustomerMood mood)
     {
         if (!shiftRunning || isTransitioning) return;
 
-        // Game Over: клиент недоволен (кроме alwaysAngry)
+        // ? Game Over только после реакции
         if (mood == CustomerMood.Angry)
         {
-            if (customer != null && customer.alwaysAngry)
+            // "вечно злых" Ќ≈ считаем причиной game over
+            if (customer == null || !customer.alwaysAngry)
             {
-                // ? "вечно злой" Ч засчитываем как обслуженного (иначе смена может не завершитьс€)
-                CountServedOnce(customer);
-                TryFinishShift();
+                FailRun(" лиент недоволен");
                 return;
             }
 
-            // обычный клиент Ч это провал
-            FailRun(" лиент недоволен");
+            // но если alwaysAngry Ч можно засчитать как обслуженного, чтобы смена не зависала
+            CountServedOnce(customer);
+            TryFinishShift();
             return;
         }
 
-        // «асчитываем как обслуженного (Happy/Neutral)
+        // ? Happy/Neutral Ч обслужено
         if (customer != null)
             CountServedOnce(customer);
 
@@ -214,10 +214,7 @@ public class ShiftManager : MonoBehaviour
 
     private void CountServedOnce(Customer customer)
     {
-        // засчитываем 1 раз конкретного клиента
-        if (!countedCustomers.Add(customer))
-            return;
-
+        if (!countedCustomers.Add(customer)) return;
         clientsServedThisShift++;
     }
 
@@ -229,7 +226,6 @@ public class ShiftManager : MonoBehaviour
             StartCoroutine(EndShiftSuccessRoutine());
         }
     }
-
 
     private IEnumerator EndShiftSuccessRoutine()
     {
