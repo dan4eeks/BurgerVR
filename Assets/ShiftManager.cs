@@ -78,6 +78,35 @@ public class ShiftManager : MonoBehaviour
         if (orderManager == null) orderManager = FindObjectOfType<OrderManager>();
     }
 
+    public void FailAfterCustomerDeath(Customer victim, string reason)
+    {
+        if (!gameObject.activeInHierarchy) return;
+        if (isTransitioning) return; // чтобы не запускалось несколько раз
+        StartCoroutine(FailAfterCustomerDeathRoutine(victim, reason));
+    }
+
+    private IEnumerator FailAfterCustomerDeathRoutine(Customer victim, string reason)
+    {
+        shiftRunning = false;
+        isTransitioning = true;
+
+        customerManager?.SetSpawningEnabled(false);
+
+        // ждём, пока закончится анимация смерти
+        if (victim != null)
+            yield return victim.WaitForDeathAnimation();
+
+        if (gameOverScreen != null)
+            yield return gameOverScreen.Play(reason);
+        else
+            yield return new WaitForSeconds(2f);
+
+        StartDay = 1;
+        UnityEngine.SceneManagement.SceneManager.LoadScene(
+            UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex
+        );
+    }
+
     private void OnEnable()
     {
         PattyCookable.OnSmokeAlarmBeepGlobal += OnSmokeBeep;

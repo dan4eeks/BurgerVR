@@ -65,6 +65,51 @@ public class CustomerManager : MonoBehaviour
         SpawningEnabled = true;
     }
 
+    public void PanicFromPlateHit(Customer victim)
+    {
+        // Собираем всех клиентов (как в OnSmokeAlarmBeep)
+        List<Customer> toEvacuate = new List<Customer>();
+
+        if (ActiveCustomer != null)
+            toEvacuate.Add(ActiveCustomer);
+
+        for (int i = 0; i < queue.Count; i++)
+        {
+            var c = queue[i];
+            if (c != null && !toEvacuate.Contains(c))
+                toEvacuate.Add(c);
+        }
+
+        // Убираем жертву из эвакуации
+        if (victim != null)
+            toEvacuate.Remove(victim);
+
+        // Вычистим очередь/кассу
+        if (victim != null)
+        {
+            if (ActiveCustomer == victim) ActiveCustomer = null;
+            queue.Remove(victim);
+        }
+
+        queue.Clear();
+        ActiveCustomer = null;
+
+        OnActiveCustomerLeft?.Invoke();
+
+        // Остальные бегут как при пожаре
+        for (int i = 0; i < toEvacuate.Count; i++)
+        {
+            Customer c = toEvacuate[i];
+            if (c == null) continue;
+            if (c.IsDead) continue;
+
+            evacuating.Add(c);
+
+            float delay = UnityEngine.Random.Range(panicDelayMin, panicDelayMax);
+            StartCoroutine(PanicAfterDelay(c, delay)); // внутри вызывает c.PanicRunToExit()
+        }
+    }
+
     public void SetSpawningEnabled(bool enabled)
     {
         SpawningEnabled = enabled;

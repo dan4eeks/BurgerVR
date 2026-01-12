@@ -4,5 +4,6 @@ public enum CustomerMood
     Neutral,
     Angry,
     Scared,
-    Thinking
+    Thinking,
+    Dead
 }

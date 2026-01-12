@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class Customer : MonoBehaviour
@@ -12,7 +13,7 @@ public class Customer : MonoBehaviour
     [Header("Timing (seconds)")]
     public float happyDuration = 60f;
     public float neutralDuration = 60f;
-    public float angryDuration = 40f; //     (  mult)
+    public float angryDuration = 40f;
 
     [Header("Order Reaction")]
     public CustomerReactionState reactionState = CustomerReactionState.None;
@@ -22,6 +23,10 @@ public class Customer : MonoBehaviour
     [SerializeField] private float cashierHappyDuration = 30f;
     [SerializeField] private float cashierNeutralDuration = 30f;
     [SerializeField] private float cashierAngryDuration = 20f;
+
+    [Header("Head interaction")]
+    [SerializeField] private Collider headCollider;   // SphereCollider на HeadTarget
+    [SerializeField] private GameObject headTargetGO;
 
     [Header("Audio")]
     [SerializeField] private AudioSource panicAudioSource;
@@ -82,6 +87,76 @@ public class Customer : MonoBehaviour
 
     public float LastReactionDuration { get; private set; }
 
+    // =========================
+    // Death / Knockout (plate hit)
+    // =========================
+    [Header("Death")]
+    [SerializeField] private string deadTrigger = "Click"; // если есть триггер в Animator (необязательно)
+    [SerializeField] private string deadStateName = "Knocked Out"; // Имя STATE в Animator Controller
+    [SerializeField] private float deathFallbackSeconds = 5.0f;
+
+    public bool IsDead { get; private set; }
+
+    public void Die()
+    {
+        if (IsDead) return;
+        IsDead = true;
+
+        // стопаем логику/движение, чтобы он не бежал и не исчезал
+        isLeaving = false;
+        isPanicRunning = false;
+        targetPoint = null;
+        currentSpeed = 0f;
+        SetAnimatorSpeed(0f);
+
+        mood = CustomerMood.Dead;
+        ApplyMoodVisual();
+
+        if (animator != null && !string.IsNullOrEmpty(deadTrigger))
+            animator.SetTrigger(deadTrigger);
+    }
+
+    /// Ждём завершения death-анимации (или fallback, если что-то не найдено)
+    public IEnumerator WaitForDeathAnimation()
+    {
+        if (animator == null)
+        {
+            yield return new WaitForSeconds(deathFallbackSeconds);
+            yield break;
+        }
+
+        // даём аниматору 1 кадр обработать Trigger
+        yield return null;
+
+        float start = Time.time;
+        float maxWaitToEnter = Mathf.Max(0.25f, deathFallbackSeconds + 1.0f);
+
+        // ждём входа в нужный state
+        while (!animator.GetCurrentAnimatorStateInfo(0).IsName(deadStateName))
+        {
+            if (Time.time - start > maxWaitToEnter)
+            {
+                yield return new WaitForSeconds(deathFallbackSeconds);
+                yield break;
+            }
+            yield return null;
+        }
+
+        // ждём, пока state проиграется до конца
+        while (true)
+        {
+            var st = animator.GetCurrentAnimatorStateInfo(0);
+
+            if (!st.IsName(deadStateName))
+                break;
+
+            if (st.normalizedTime >= 1f && !animator.IsInTransition(0))
+                break;
+
+            yield return null;
+        }
+    }
+
     private void Awake()
     {
         if (animator == null)
@@ -92,14 +167,32 @@ public class Customer : MonoBehaviour
         // :       " "  (VR + bounds)
         if (animator != null)
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        
+        if (headCollider == null)
+            headCollider = GetComponentInChildren<SphereCollider>(true); // или найди точнее по имени
+
+        if (headTargetGO == null && headCollider != null)
+            headTargetGO = headCollider.gameObject;
+
+        // ВАЖНО: по умолчанию выключаем всем
+        ApplyHeadInteraction(false);
+    }
+
+    private void ApplyHeadInteraction(bool enabled)
+    {
+        if (headTargetGO != null) headTargetGO.SetActive(enabled);   // если хочешь убирать объект
+        if (headCollider != null) headCollider.enabled = enabled;    // самое важное: физика
     }
 
     public void Init(CustomerManager mgr, Transform queuePoint, Transform exit, bool alwaysAngryFlag)
     {
+
         manager = mgr;
         exitPoint = exit;
 
         alwaysAngry = alwaysAngryFlag;
+        ApplyHeadInteraction(alwaysAngry);
+
         mood = alwaysAngry ? CustomerMood.Angry : CustomerMood.Happy;
 
         moodTimer = 0f;
