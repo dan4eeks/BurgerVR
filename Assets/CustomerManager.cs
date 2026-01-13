@@ -367,6 +367,8 @@ public class CustomerManager : MonoBehaviour
         if (panicTimer > 0f) return;
         panicTimer = panicCooldown;
 
+        FindObjectOfType<ShiftManager>()?.StartFireIncidentGraceTimer();
+        
         // Собираем всех текущих клиентов (включая кассу)
         List<Customer> toEvacuate = new List<Customer>();
 

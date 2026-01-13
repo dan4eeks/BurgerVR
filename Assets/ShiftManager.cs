@@ -24,6 +24,13 @@ public class ShiftManager : MonoBehaviour
     [Tooltip("—колько 'дымовых beep' за смену считаем провалом (паника-цепочка).")]
     [SerializeField] private int smokeBeepsToFail = 1;
 
+    [Header("Fire grace timer")]
+    [SerializeField] private float fireGraceSeconds = 10f;
+
+    private Coroutine fireGraceRoutine;
+    private bool fireIncidentActive;
+
+
     [System.Serializable]
     public struct DaySettings
     {
@@ -76,6 +83,52 @@ public class ShiftManager : MonoBehaviour
     {
         if (customerManager == null) customerManager = FindObjectOfType<CustomerManager>();
         if (orderManager == null) orderManager = FindObjectOfType<OrderManager>();
+    }
+
+    public void StartFireIncidentGraceTimer()
+    {
+        if (fireIncidentActive) return;
+        fireIncidentActive = true;
+
+        if (fireGraceRoutine != null)
+            StopCoroutine(fireGraceRoutine);
+
+        fireGraceRoutine = StartCoroutine(FireGraceRoutine());
+    }
+
+    public void ExtinguishFireIncident()
+    {
+        if (!fireIncidentActive) return;
+        fireIncidentActive = false;
+
+        if (fireGraceRoutine != null)
+            StopCoroutine(fireGraceRoutine);
+
+        fireGraceRoutine = null;
+    }
+
+    private IEnumerator FireGraceRoutine()
+    {
+        float t = fireGraceSeconds;
+
+        while (t > 0f)
+        {
+            if (!fireIncidentActive)
+                yield break; // потушили
+
+            t -= Time.deltaTime;
+            yield return null;
+        }
+
+        // врем€ вышло -> game over
+        // (используем твой существующий механизм фейла/экрана)
+        if (gameOverScreen != null)
+            yield return gameOverScreen.Play("ѕожар не потушен!");
+
+        StartDay = 1;
+        UnityEngine.SceneManagement.SceneManager.LoadScene(
+            UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex
+        );
     }
 
     public void FailAfterCustomerDeath(Customer victim, string reason)

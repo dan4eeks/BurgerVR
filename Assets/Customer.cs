@@ -294,6 +294,9 @@ public class Customer : MonoBehaviour
 
     private void Update()
     {
+
+        if (IsDead) return;
+
         MoveTowardsTarget();
         UpdateAnimatorSpeed();
 
@@ -377,6 +380,7 @@ public class Customer : MonoBehaviour
 
     private void UpdateMoodByTime()
     {
+        if (IsDead) return;
         float happyT = happyDuration;
         float neutralT = neutralDuration;
         float angryT = angryDuration;
