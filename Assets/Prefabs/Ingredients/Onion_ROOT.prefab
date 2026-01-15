@@ -278,6 +278,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 3
-  layerHeight: 0.005
+  layerHeight: 0.004
   snapped: 0
   spawner: {fileID: 0}

@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class PattyCookable : MonoBehaviour
 {
-    // ?? Глобальное событие: прозвучал "alarm beep" от сгоревшей котлеты
+    // Глобальное событие: прозвучал "alarm beep" от сгоревшей котлеты
     public static System.Action OnSmokeAlarmBeepGlobal;
     public static float CookTimeSeconds = 22f; // x по умолчанию
 
@@ -227,7 +227,7 @@ public class PattyCookable : MonoBehaviour
                 smokeAlarmSource.PlayOneShot(smokeAlarmBeep);
             }
 
-            // ?? событие паники
+            // событие паники
             OnSmokeAlarmBeepGlobal?.Invoke();
         }
     }

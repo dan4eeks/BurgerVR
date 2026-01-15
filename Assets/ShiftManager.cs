@@ -20,17 +20,6 @@ public class ShiftManager : MonoBehaviour
     [Header("Shift Rules")]
     [SerializeField] private int targetShifts = 3;
 
-    [Header("Fail Conditions")]
-    [Tooltip("Сколько 'дымовых beep' за смену считаем провалом (паника-цепочка).")]
-    [SerializeField] private int smokeBeepsToFail = 1;
-
-    [Header("Fire grace timer")]
-    [SerializeField] private float fireGraceSeconds = 10f;
-
-    private Coroutine fireGraceRoutine;
-    private bool fireIncidentActive;
-
-
     [System.Serializable]
     public struct DaySettings
     {
@@ -65,6 +54,8 @@ public class ShiftManager : MonoBehaviour
 
     // Persist day across scene reload
     public static int StartDay = 1;
+    [Header("Fire fail delay")]
+    [SerializeField] private float fireFailDelay = 2f;
 
     private int currentShift = 1;
 
@@ -83,52 +74,6 @@ public class ShiftManager : MonoBehaviour
     {
         if (customerManager == null) customerManager = FindObjectOfType<CustomerManager>();
         if (orderManager == null) orderManager = FindObjectOfType<OrderManager>();
-    }
-
-    public void StartFireIncidentGraceTimer()
-    {
-        if (fireIncidentActive) return;
-        fireIncidentActive = true;
-
-        if (fireGraceRoutine != null)
-            StopCoroutine(fireGraceRoutine);
-
-        fireGraceRoutine = StartCoroutine(FireGraceRoutine());
-    }
-
-    public void ExtinguishFireIncident()
-    {
-        if (!fireIncidentActive) return;
-        fireIncidentActive = false;
-
-        if (fireGraceRoutine != null)
-            StopCoroutine(fireGraceRoutine);
-
-        fireGraceRoutine = null;
-    }
-
-    private IEnumerator FireGraceRoutine()
-    {
-        float t = fireGraceSeconds;
-
-        while (t > 0f)
-        {
-            if (!fireIncidentActive)
-                yield break; // потушили
-
-            t -= Time.deltaTime;
-            yield return null;
-        }
-
-        // время вышло -> game over
-        // (используем твой существующий механизм фейла/экрана)
-        if (gameOverScreen != null)
-            yield return gameOverScreen.Play("Пожар не потушен!");
-
-        StartDay = 1;
-        UnityEngine.SceneManagement.SceneManager.LoadScene(
-            UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex
-        );
     }
 
     public void FailAfterCustomerDeath(Customer victim, string reason)
@@ -302,18 +247,30 @@ public class ShiftManager : MonoBehaviour
     {
         if (!shiftRunning || isTransitioning) return;
 
-        smokeBeepsThisShift++;
+        isTransitioning = true;
+        shiftRunning = false;
 
-        if (statusText != null)
-            statusText.text = $"ТРЕВОГА! ({smokeBeepsThisShift}/{smokeBeepsToFail})";
+        customerManager?.SetSpawningEnabled(false);
 
-        if (smokeBeepsThisShift >= smokeBeepsToFail)
-        {
-            // вместо FailRun — специальный сценарий
-            if (!gameObject.activeInHierarchy) return;
-            StartCoroutine(FailAfterEvacuationRoutine("Паника из-за дыма"));
-        }
+        StartCoroutine(FireGameOverRoutine());
     }
+
+    private IEnumerator FireGameOverRoutine()
+    {
+        if (statusText != null)
+            statusText.text = "ПОЖАР!";
+
+        // ?? небольшая пауза, чтобы игрок понял, что произошло
+        yield return new WaitForSeconds(5f);
+
+        if (gameOverScreen != null)
+            yield return gameOverScreen.Play("Пожар!");
+
+        StartDay = currentShift;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+
 
     private IEnumerator FailAfterEvacuationRoutine(string reason)
     {
@@ -323,9 +280,8 @@ public class ShiftManager : MonoBehaviour
         // стопаем спавн
         customerManager?.SetSpawningEnabled(false);
 
-        // ? ждём, пока все клиенты добегут и уничтожатся
-        if (customerManager != null)
-            yield return customerManager.WaitForEvacuation(12f);
+        // фиксированная задержка перед Game Over
+        yield return new WaitForSeconds(fireFailDelay);
 
         // показываем Game Over
         if (gameOverScreen != null)

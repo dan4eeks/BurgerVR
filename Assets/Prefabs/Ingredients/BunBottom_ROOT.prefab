@@ -32,7 +32,7 @@ Transform:
   m_GameObject: {fileID: 7842529404138711425}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.082, y: 0.6, z: -0.053}
-  m_LocalScale: {x: 0.12, y: 0.017, z: 0.12}
+  m_LocalScale: {x: 0.12, y: 0.01, z: 0.12}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -44,7 +44,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7842529404138711425}
-  m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!23 &7842529404138711430
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -115,7 +115,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 7
-  layerHeight: 0.015
+  layerHeight: 0.012
   snapped: 0
   spawner: {fileID: 0}
 --- !u!65 &8609606835331655040
@@ -129,8 +129,8 @@ BoxCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 1, y: 1.7298279, z: 1}
-  m_Center: {x: 0, y: -0.029285355, z: 0}
+  m_Size: {x: 1, y: 2.55239, z: 1}
+  m_Center: {x: 0, y: 0.11085272, z: 0}
 --- !u!114 &-4307405721278712341
 MonoBehaviour:
   m_ObjectHideFlags: 0

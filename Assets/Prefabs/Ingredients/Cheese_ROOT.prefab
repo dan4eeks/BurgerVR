@@ -115,7 +115,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 5
-  layerHeight: 0.009
+  layerHeight: 0.004
   snapped: 0
   spawner: {fileID: 0}
 --- !u!65 &4480637963290835259

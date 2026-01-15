@@ -13,10 +13,28 @@ public class ShiftIntroScreen : MonoBehaviour
     [SerializeField] private float fadeDuration = 0.5f;
     [SerializeField] private float visibleDuration = 2f;
 
+
+    string GetClientWord(int n)
+    {
+        int lastTwo = n % 100;
+        int last = n % 10;
+
+        if (lastTwo >= 11 && lastTwo <= 14)
+            return "клиентов";
+
+        if (last == 1)
+            return "клиент";
+
+        if (last >= 2 && last <= 4)
+            return "клиента";
+
+        return "клиентов";
+    }
+
     public IEnumerator Play(int day, int targetClients)
     {
         titleText.text = $"День {day}";
-        goalText.text = $"Цель: {targetClients} клиентов";
+        goalText.text = $"Цель: {targetClients} {GetClientWord(targetClients)}";
 
         // fade in
         yield return Fade(0f, 1f);
