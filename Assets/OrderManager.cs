@@ -299,30 +299,44 @@ public class OrderManager : MonoBehaviour
         currentRecipe.Clear();
 
         int total = Mathf.Max(3, recipeTotalIngredients);
-        int extrasNeeded = total - 3;
+        int innerCount = total - 2; // всЄ между булками
 
+        // 1?? нижн€€ булка Ч ¬—≈√ƒј перва€
         currentRecipe.Add(IngredientType.BunBottom);
-        currentRecipe.Add(IngredientType.Patty);
+
+        // 2?? собираем внутренние ингредиенты
+        List<IngredientType> inner = new List<IngredientType>();
+
+        // ? ќЅя«ј“≈Ћ№Ќќ добавл€ем котлету (но не фиксируем позицию)
+        inner.Add(IngredientType.Patty);
 
         IngredientType[] all = (IngredientType[])Enum.GetValues(typeof(IngredientType));
-        List<IngredientType> extras = new List<IngredientType>();
 
-        for (int i = 0; i < all.Length; i++)
+        List<IngredientType> extras = new List<IngredientType>();
+        foreach (var v in all)
         {
-            IngredientType v = all[i];
             if (v == IngredientType.BunBottom) continue;
             if (v == IngredientType.BunTop) continue;
             if (v == IngredientType.Patty) continue;
             extras.Add(v);
         }
 
-        // если enum пустой (нет сыра/овощей) Ч будет всегда 3, и это нормально
-        for (int i = 0; i < extrasNeeded; i++)
+        while (inner.Count < innerCount && extras.Count > 0)
         {
-            if (extras.Count == 0) break;
-            currentRecipe.Add(extras[UnityEngine.Random.Range(0, extras.Count)]);
+            inner.Add(extras[UnityEngine.Random.Range(0, extras.Count)]);
         }
 
+        // 3?? перемешиваем внутренности
+        for (int i = 0; i < inner.Count; i++)
+        {
+            int rnd = UnityEngine.Random.Range(i, inner.Count);
+            (inner[i], inner[rnd]) = (inner[rnd], inner[i]);
+        }
+
+        // 4?? добавл€ем внутрь рецепта
+        currentRecipe.AddRange(inner);
+
+        // 5?? верхн€€ булка Ч ¬—≈√ƒј последн€€
         currentRecipe.Add(IngredientType.BunTop);
     }
 

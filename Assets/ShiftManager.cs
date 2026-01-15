@@ -333,7 +333,7 @@ public class ShiftManager : MonoBehaviour
         else
             yield return new WaitForSeconds(2f);
 
-        StartDay = 1;
+        StartDay = currentShift;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
@@ -426,7 +426,7 @@ public class ShiftManager : MonoBehaviour
         else
             yield return new WaitForSeconds(2f);
 
-        StartDay = 1;
+        StartDay = currentShift;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 }

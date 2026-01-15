@@ -15,7 +15,7 @@ public class WinnerScreen : MonoBehaviour
 
     public IEnumerator PlayShiftCleared(int shift, int targetShifts)
     {
-        if (titleText != null) titleText.text = "ялемю опнидемю ?";
+        if (titleText != null) titleText.text = "ялемю опнидемю!";
         if (progressText != null) progressText.text = $"оПНЦПЕЯЯ: {shift} / {targetShifts}";
 
         yield return Fade(0f, 1f);
@@ -25,7 +25,7 @@ public class WinnerScreen : MonoBehaviour
 
     public IEnumerator PlayFinalVictory()
     {
-        if (titleText != null) titleText.text = "онаедю ????";
+        if (titleText != null) titleText.text = "онаедю!";
         if (progressText != null) progressText.text = "бШ ОЕПЕФХКХ БЯЕ ЯЛЕМШ!";
 
         yield return Fade(0f, 1f);

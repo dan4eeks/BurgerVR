@@ -1296,7 +1296,7 @@ MonoBehaviour:
   titleText: {fileID: 735739925}
   reasonText: {fileID: 419473076}
   fadeDuration: 0.5
-  visibleDuration: 2.5
+  visibleDuration: 7
 --- !u!4 &83840793
 Transform:
   m_ObjectHideFlags: 0
@@ -3179,8 +3179,8 @@ MonoBehaviour:
   days:
   - day: 1
     targetCustomers: 3
-    spawnInterval: 2
-    recipeIngredientsTotal: 3
+    spawnInterval: 25
+    recipeIngredientsTotal: 4
     happyTime: 60
     neutralTime: 60
     angryTime: 40
@@ -3190,7 +3190,7 @@ MonoBehaviour:
   - day: 2
     targetCustomers: 6
     spawnInterval: 20
-    recipeIngredientsTotal: 4
+    recipeIngredientsTotal: 5
     happyTime: 45
     neutralTime: 45
     angryTime: 30
@@ -22484,7 +22484,7 @@ MonoBehaviour:
   titleText: {fileID: 1082018195}
   goalText: {fileID: 1193035792}
   fadeDuration: 0.5
-  visibleDuration: 2
+  visibleDuration: 7
 --- !u!4 &1799309506
 Transform:
   m_ObjectHideFlags: 0
@@ -26286,7 +26286,7 @@ MonoBehaviour:
   titleText: {fileID: 2038425185}
   progressText: {fileID: 1827428499}
   fadeDuration: 0.5
-  visibleDuration: 2
+  visibleDuration: 7
 --- !u!4 &2113548689
 Transform:
   m_ObjectHideFlags: 0
